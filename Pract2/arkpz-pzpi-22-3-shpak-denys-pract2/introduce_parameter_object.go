@@ -1,4 +1,4 @@
-// Bad example
+// До рефакторингу
 id, err := storage.Save(
 	context.Background(),
 	primitive.NewObjectID(),
