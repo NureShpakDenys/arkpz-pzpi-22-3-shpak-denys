@@ -1,0 +1,13 @@
+version: "3"  
+
+tasks:  
+  default:
+    cmds:  
+      - task: run 
+  run:
+    desc: "Run the server"
+    cmds:
+      - |
+        swag init -g cmd/app/main.go
+        cd ./cmd/app
+        go run main.go --config ../../config/config.yaml

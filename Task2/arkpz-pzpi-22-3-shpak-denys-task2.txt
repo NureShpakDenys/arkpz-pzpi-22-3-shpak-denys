@@ -1,0 +1,1351 @@
+﻿Харківський національний університет радіоелектроніки
+Факультет комп'ютерних наук
+Катедра програмної інженерії
+
+
+
+
+ЗВІТ
+до лабораторної роботи №2
+з дисципліни  «Аналіз та рефакторинг коду»
+на тему: «РОЗРОБКА БАЗИ ДАНИХ ДЛЯ СЕРВЕРНОЇ ЧАСТИНИ ПРОГРАМНОЇ СИСТЕМИ ТА ПРИКЛАДНОГО ПРОГРАМНОГО ІНТЕРФЕЙСУ (API)»
+
+
+
+Виконав
+ст. гр. ПЗПІ-22-3
+Шпак Денис Олександрович
+
+Перевірив
+ст. викладач катедри ПІ
+Сокорчук Ігор Петрович
+
+
+
+Харків 2024
+1 МЕТА РОБОТИ
+
+     Метою даної лабораторної роботи є розробка бази даних для серверної частини програмної системи та прикадного програмного інтерфейсу.
+     
+2 ХІД РОБОТИ
+
+	Розробка серверної частини програмної системи та її API вимагала прийняття низки інженерних рішень, спрямованих на забезпечення високої продуктивності, масштабованості, надійності та безпеки системи.
+     У даній роботі використано гексагональну архітектуру, яка забезпечує чітке розділення внутрішньої бізнес-логіки від зовнішніх інтерфейсів, що підвищує модульність і тестованість системи. У якості сховища даних використано реляційну базу даних PostgreSQL, що забезпечує надійне зберігання та зв’язність даних між сутностями. Для управління залежностями впроваджено DI-контейнер, що спрощує конфігурацію компонентів системи та покращує їхню взаємодію. Безпека системи забезпечується за допомогою JWT-токенів для автентифікації та авторизації користувачів, що дозволяє контролювати доступ до ресурсів API та реалізовувати різні рівні прав доступу.
+     Проектування бази даних для серверної частини програмної системи та розробка прикладного програмного інтерфейсу, що забезпечує взаємодію між клієнтом і сервером, є основним завданням на лабораторну роботу. На першому етапі роботи було проведено аналіз предметної області, результатом якого стало створення UML-діаграм прецедентів для ключових функцій системи. Зокрема, були розроблені діаграми для специфікацій процесів реєстрації та авторизації користувачів, управління маршрутами та здійснення дій над поставками. Ці діаграми наведено у додатку А.
+     Наступним етапом було проектування бази даних, що включало створення ER-діаграми, яка відображає зв’язки між сутностями системи, такими як користувачі, компанії, маршрути, поставки та продукти. ER діаграма наведена в додатку Б, а структура бази даних, що включає зовнішні ключі, представлена у вигляді відповідної діаграми в додатку В.
+     Для забезпечення взаємодії між компонентами системи було розроблено API-специфікацію, яка описує всі необхідні маршрути, методи HTTP-запитів та структуру даних, що передаються між клієнтом і сервером. Наприклад, маршрути для авторизації користувачів, реєстрації нових користувачів, створення компаній, а також управління маршрутами та продуктами описані у додатку Г.
+     Ключовим етапом роботи стала імплементація взаємодії між сервером, клієнтом та базою даних. Для цього було реалізовано CRUD-операції за допомогою ORM-фреймворку GORM. Код реалізації включає функції для додавання нових записів у базу даних, отримання даних за унікальним ідентифікатором, фільтрацію даних за параметрами, оновлення та видалення записів. Взаємодія з базою даних описана у Додатку Д.
+     Після завершення імплементації було розроблено обробники HTTP-запитів для API за допомогою фреймворку gin-gonic Код обнобників наведено у додатку Д.
+     Відео-звіт із демонстрацією виконаної роботи доступний за посиланням, наведеним у Додатку Е.
+     
+     
+     
+ВИСНОВКИ
+
+     У результаті виконання лабораторної роботи було розроблено діаграму прецедентів програмної систему. Було розроблено базу даних та API специфікацію. Було імплементовано взаємодію між сервером та базою даних та сервером і клієнтом.
+
+     
+     
+ДОДАТОК А
+UML діаграма прецедентів
+
+
+Рисунок А.1 – Діаграма прецедентів реєстрації та авторизації
+
+
+Рисунок А.2 – Діаграма прецедентів дій над маршрутами
+
+Рисунок А.3 – Діаграма прецедентів дій над поставками
+
+ДОДАТОК Б
+ER діаграма бази даних
+
+
+Рисунок Б.1 – Діаграма відносин сутностей бази даних
+
+
+
+
+
+ДОДАТОК В
+Діаграма структури бази даних
+
+
+Рисунок В.1 – Діаграма структури бази даних
+
+ДОДАТОК Г
+API специфікація
+
+001 basePath: /
+002 definitions:
+003   handlers.AddUserToCompanyRequest:
+004     properties:
+005       role:
+006         allOf:
+007         - $ref: '#/definitions/handlers.Role'
+008         example: user | admin | manager
+009       userID:
+010         type: integer
+011     type: object
+012   handlers.AuthCredentials:
+013     properties:
+014       password:
+015         example: password123
+016         type: string
+017       username:
+018         example: john_doe
+019         type: string
+020     type: object
+021   handlers.CompanyRequest:
+022     properties:
+023       address:
+024         type: string
+025       name:
+026         type: string
+027     type: object
+028   handlers.CreateDeliveryRequest:
+029     properties:
+030       company_id:
+031         type: integer
+032       date:
+033         example: "2023-09-01"
+034         type: string
+035     type: object
+036   handlers.CreateProductRequest:
+037     properties:
+038       deliveryID:
+039         type: integer
+040       name:
+041         type: string
+042       product_type:
+043         example: Fruits | Vegetables | Frozen Foods | Dairy Products | Meat
+044         type: string
+045       weight:
+046         type: number
+047     type: object
+048   handlers.CreateRouteRequest:
+049     properties:
+050       company_id:
+051         type: integer
+052       name:
+053         example: Route 1
+054         type: string
+055       status:
+056         example: not_started | active | completed
+057         type: string
+058     type: object
+059   handlers.CreateSensorDataRequest:
+060     properties:
+061       humidity:
+062         example: 50
+063         type: number
+064       temperature:
+065         example: 25.5
+066         type: number
+067       timestamp:
+068         example: "2021-09-01T12:00:00Z"
+069         type: string
+070       waypoint_id:
+071         type: integer
+072     type: object
+073   handlers.CreateWaypointRequest:
+074     properties:
+075       device_serial:
+076         type: string
+077       latitude:
+078         type: number
+079       longitude:
+080         type: number
+081       name:
+082         type: string
+083       route_id:
+084         type: integer
+085     type: object
+086   handlers.RemoveUserFromCompanyRequest:
+087     properties:
+088       userID:
+089         type: integer
+090     type: object
+091   handlers.Role:
+092     enum:
+093     - user
+094     - admin
+095     - manager
+096     type: string
+097     x-enum-varnames:
+098     - RoleUser
+099     - RoleAdmin
+100     - RoleManager
+101   handlers.UpdateDeliveryRequest:
+102     properties:
+103       date:
+104         example: "2024-08-01"
+105         type: string
+106       status:
+107         example: completed
+108         type: string
+109     type: object
+110   handlers.UpdateProductRequest:
+111     properties:
+112       name:
+113         type: string
+114       product_type:
+115         type: string
+116       weight:
+117         type: number
+118     type: object
+119   handlers.UpdateRouteRequest:
+120     properties:
+121       name:
+122         example: Route 1
+123         type: string
+124       status:
+125         example: not_started | active | completed
+126         type: string
+127     type: object
+128   handlers.UpdateUserInCompanyRequest:
+129     properties:
+130       role:
+131         example: user | admin | manager
+132         type: string
+133       userID:
+134         type: integer
+135     type: object
+136   handlers.UpdateUserRequest:
+137     properties:
+138       name:
+139         type: string
+140     type: object
+141   handlers.UpdateWaypointRequest:
+142     properties:
+143       device_serial:
+144         type: string
+145       latitude:
+146         type: number
+147       longitude:
+148         type: number
+149       name:
+150         type: string
+151     type: object
+152 host: localhost:8081
+153 info:
+154   contact: {}
+155   termsOfService: http://swagger.io/terms/
+156   title: API Specification
+157   version: "1.0"
+158 paths:
+159   /analytics/{company_id}/optimal-back-route:
+160     get:
+161       description: Retrieves the optimal back route for the given route ID
+162       parameters:
+163       - description: company_id
+164         in: path
+165         name: company_id
+166         required: true
+167         type: integer
+168       produces:
+169       - application/json
+170       responses: {}
+171       security:
+172       - BearerAuth: []
+173       summary: Get optimal back route
+174       tags:
+175       - analytics
+176   /analytics/{company_id}/optimal-route:
+177     get:
+178       description: Retrieves the optimal route for the given route ID
+179       parameters:
+180       - description: company_id
+181         in: path
+182         name: company_id
+183         required: true
+184         type: integer
+185       produces:
+186       - application/json
+187       responses: {}
+188       security:
+189       - BearerAuth: []
+190       summary: Get optimal route
+191       tags:
+192       - analytics
+193   /analytics/{company_id}/weather-alert:
+194     get:
+195       description: Retrieves the weather alert for the given route ID
+196       parameters:
+197       - description: company_id
+198         in: path
+199         name: company_id
+200         required: true
+201         type: integer
+202       produces:
+203       - application/json
+204       responses: {}
+205       security:
+206       - BearerAuth: []
+207       summary: Get weather alert
+208       tags:
+209       - analytics
+210   /auth/login:
+211     post:
+212       consumes:
+213       - application/json
+214       description: Authenticates a user and returns a token
+215       parameters:
+216       - description: User credentials
+217         in: body
+218         name: credentials
+219         required: true
+220         schema:
+221           $ref: '#/definitions/handlers.AuthCredentials'
+222       produces:
+223       - application/json
+224       responses: {}
+225       summary: Login user
+226       tags:
+227       - auth
+228   /auth/logout:
+229     post:
+230       consumes:
+231       - application/json
+232       description: Logs out a user by invalidating their token
+233       produces:
+234       - application/json
+235       responses: {}
+236       security:
+237       - BearerAuth: []
+238       summary: Logout user
+239       tags:
+240       - auth
+241   /auth/register:
+242     post:
+243       consumes:
+244       - application/json
+245       description: Registers a new user with the provided details
+246       parameters:
+247       - description: User details
+248         in: body
+249         name: user
+250         required: true
+251         schema:
+252           $ref: '#/definitions/handlers.AuthCredentials'
+253       produces:
+254       - application/json
+255       responses: {}
+256       summary: Register a new user
+257       tags:
+258       - auth
+259   /company:
+260     post:
+261       consumes:
+262       - application/json
+263       description: Registers a new company with the provided details
+264       parameters:
+265       - description: Company details
+266         in: body
+267         name: company
+268         required: true
+269         schema:
+270           $ref: '#/definitions/handlers.CompanyRequest'
+271       produces:
+272       - application/json
+273       responses: {}
+274       security:
+275       - BearerAuth: []
+276       summary: Register a new company
+277       tags:
+278       - company
+279   /company/{company_id}:
+280     delete:
+281       description: Deletes a company by its ID
+282       parameters:
+283       - description: Company ID
+284         in: path
+285         name: company_id
+286         required: true
+287         type: integer
+288       produces:
+289       - application/json
+290       responses: {}
+291       security:
+292       - BearerAuth: []
+293       summary: Delete a company
+294       tags:
+295       - company
+296     get:
+297       description: Retrieves the details of a company by its ID
+298       parameters:
+299       - description: Company ID
+300         in: path
+301         name: company_id
+302         required: true
+303         type: integer
+304       produces:
+305       - application/json
+306       responses: {}
+307       security:
+308       - BearerAuth: []
+309       summary: Get company details
+310       tags:
+311       - company
+312     put:
+313       consumes:
+314       - application/json
+315       description: Updates the details of an existing company
+316       parameters:
+317       - description: Company ID
+318         in: path
+319         name: company_id
+320         required: true
+321         type: integer
+322       - description: Updated company details
+323         in: body
+324         name: company
+325         required: true
+326         schema:
+327           $ref: '#/definitions/handlers.CompanyRequest'
+328       produces:
+329       - application/json
+330       responses: {}
+331       security:
+332       - BearerAuth: []
+333       summary: Update company details
+334       tags:
+335       - company
+336   /company/{company_id}/add-user:
+337     post:
+338       consumes:
+339       - application/json
+340       description: Adds a user to a company if the request is made by the company
+341         creator
+342       parameters:
+343       - description: Company ID
+344         in: path
+345         name: company_id
+346         required: true
+347         type: integer
+348       - description: User ID to add
+349         in: body
+350         name: userID
+351         required: true
+352         schema:
+353           $ref: '#/definitions/handlers.AddUserToCompanyRequest'
+354       produces:
+355       - application/json
+356       responses: {}
+357       security:
+358       - BearerAuth: []
+359       summary: Add a user to a company
+360       tags:
+361       - company
+362   /company/{company_id}/remove-user:
+363     delete:
+364       consumes:
+365       - application/json
+366       description: Removes a user from a company if the request is made by the company
+367         creator
+368       parameters:
+369       - description: Company ID
+370         in: path
+371         name: company_id
+372         required: true
+373         type: integer
+374       - description: User ID to remove
+375         in: body
+376         name: userID
+377         required: true
+378         schema:
+379           $ref: '#/definitions/handlers.RemoveUserFromCompanyRequest'
+380       produces:
+381       - application/json
+382       responses: {}
+383       security:
+384       - BearerAuth: []
+385       summary: Remove a user from a company
+386       tags:
+387       - company
+388   /company/{company_id}/update-user:
+389     put:
+390       consumes:
+391       - application/json
+392       description: Updates a user in a company if the request is made by the company
+393         creator
+394       parameters:
+395       - description: Company ID
+396         in: path
+397         name: company_id
+398         required: true
+399         type: integer
+400       - description: User ID to update
+401         in: body
+402         name: userID
+403         required: true
+404         schema:
+405           $ref: '#/definitions/handlers.UpdateUserInCompanyRequest'
+406       produces:
+407       - application/json
+408       responses: {}
+409       security:
+410       - BearerAuth: []
+411       summary: Update a user in a company
+412       tags:
+413       - company
+414   /delivery/:
+415     post:
+416       consumes:
+417       - application/json
+418       description: Create a delivery
+419       parameters:
+420       - description: CreateDeliveryRequest
+421         in: body
+422         name: request
+423         required: true
+424         schema:
+425           $ref: '#/definitions/handlers.CreateDeliveryRequest'
+426       produces:
+427       - application/json
+428       responses: {}
+429       security:
+430       - BearerAuth: []
+431       summary: Create a delivery
+432       tags:
+433       - delivery
+434   /delivery/{delivery_id}:
+435     delete:
+436       consumes:
+437       - application/json
+438       description: Delete a delivery
+439       parameters:
+440       - description: Delivery ID
+441         in: path
+442         name: delivery_id
+443         required: true
+444         type: integer
+445       produces:
+446       - application/json
+447       responses: {}
+448       security:
+449       - BearerAuth: []
+450       summary: Delete a delivery
+451       tags:
+452       - delivery
+453     get:
+454       consumes:
+455       - application/json
+456       description: Get a delivery
+457       parameters:
+458       - description: Delivery ID
+459         in: path
+460         name: delivery_id
+461         required: true
+462         type: integer
+463       produces:
+464       - application/json
+465       responses: {}
+466       security:
+467       - BearerAuth: []
+468       summary: Get a delivery
+469       tags:
+470       - delivery
+471     put:
+472       consumes:
+473       - application/json
+474       description: Update a delivery
+475       parameters:
+476       - description: Delivery ID
+477         in: path
+478         name: delivery_id
+479         required: true
+480         type: integer
+481       - description: UpdateDeliveryRequest
+482         in: body
+483         name: request
+484         required: true
+485         schema:
+486           $ref: '#/definitions/handlers.UpdateDeliveryRequest'
+487       produces:
+488       - application/json
+489       responses: {}
+490       security:
+491       - BearerAuth: []
+492       summary: Update a delivery
+493       tags:
+494       - delivery
+495   /products:
+496     post:
+497       consumes:
+498       - application/json
+499       description: Create a product
+500       parameters:
+501       - description: CreateProductRequest
+502         in: body
+503         name: request
+504         required: true
+505         schema:
+506           $ref: '#/definitions/handlers.CreateProductRequest'
+507       produces:
+508       - application/json
+509       responses: {}
+510       security:
+511       - BearerAuth: []
+512       summary: Create a product
+513       tags:
+514       - product
+515   /products/{product_id}:
+516     delete:
+517       consumes:
+518       - application/json
+519       description: Delete a product
+520       parameters:
+521       - description: Product ID
+522         in: path
+523         name: product_id
+524         required: true
+525         type: integer
+526       produces:
+527       - application/json
+528       responses: {}
+529       security:
+530       - BearerAuth: []
+531       summary: Delete a product
+532       tags:
+533       - product
+534     get:
+535       consumes:
+536       - application/json
+537       description: Get a product
+538       parameters:
+539       - description: Product ID
+540         in: path
+541         name: product_id
+542         required: true
+543         type: integer
+544       produces:
+545       - application/json
+546       responses: {}
+547       security:
+548       - BearerAuth: []
+549       summary: Get a product
+550       tags:
+551       - product
+552     put:
+553       consumes:
+554       - application/json
+555       description: Update a product
+556       parameters:
+557       - description: Product ID
+558         in: path
+559         name: product_id
+560         required: true
+561         type: integer
+562       - description: UpdateProductRequest
+563         in: body
+564         name: request
+565         required: true
+566         schema:
+567           $ref: '#/definitions/handlers.UpdateProductRequest'
+568       produces:
+569       - application/json
+570       responses: {}
+571       security:
+572       - BearerAuth: []
+573       summary: Update a product
+574       tags:
+575       - product
+576   /routes:
+577     post:
+578       consumes:
+579       - application/json
+580       description: Creates a new route with the provided details
+581       parameters:
+582       - description: Route details
+583         in: body
+584         name: route
+585         required: true
+586         schema:
+587           $ref: '#/definitions/handlers.CreateRouteRequest'
+588       produces:
+589       - application/json
+590       responses: {}
+591       security:
+592       - BearerAuth: []
+593       summary: Create a new route
+594       tags:
+595       - route
+596   /routes/{route_id}:
+597     delete:
+598       description: Deletes a route with the given ID
+599       parameters:
+600       - description: Route ID
+601         in: path
+602         name: route_id
+603         required: true
+604         type: integer
+605       produces:
+606       - application/json
+607       responses: {}
+608       security:
+609       - BearerAuth: []
+610       summary: Delete a route
+611       tags:
+612       - route
+613     get:
+614       description: Retrieves a route with the given ID
+615       parameters:
+616       - description: Route ID
+617         in: path
+618         name: route_id
+619         required: true
+620         type: integer
+621       produces:
+622       - application/json
+623       responses: {}
+624       security:
+625       - BearerAuth: []
+626       summary: Get a route
+627       tags:
+628       - route
+629     put:
+630       consumes:
+631       - application/json
+632       description: Updates an existing route with the given ID
+633       parameters:
+634       - description: Route ID
+635         in: path
+636         name: route_id
+637         required: true
+638         type: integer
+639       - description: Updated route details
+640         in: body
+641         name: route
+642         required: true
+643         schema:
+644           $ref: '#/definitions/handlers.UpdateRouteRequest'
+645       produces:
+646       - application/json
+647       responses: {}
+648       security:
+649       - BearerAuth: []
+650       summary: Update an existing route
+651       tags:
+652       - route
+653   /sensor-data:
+654     post:
+655       consumes:
+656       - application/json
+657       description: Adds new sensor data to the specified SensorData
+658       parameters:
+659       - description: Sensor data details
+660         in: body
+661         name: sensor_data
+662         required: true
+663         schema:
+664           $ref: '#/definitions/handlers.CreateSensorDataRequest'
+665       produces:
+666       - application/json
+667       responses: {}
+668       security:
+669       - BearerAuth: []
+670       summary: Add sensor data to a SensorData
+671       tags:
+672       - sensor
+673   /sensor-data/{sensor_data_id}:
+674     get:
+675       description: Retrieves sensor data with the given ID
+676       parameters:
+677       - description: Sensor Data ID
+678         in: path
+679         name: sensor_data_id
+680         required: true
+681         type: integer
+682       produces:
+683       - application/json
+684       responses: {}
+685       security:
+686       - BearerAuth: []
+687       summary: Get sensor data by ID
+688       tags:
+689       - sensor
+690   /user/{id}:
+691     delete:
+692       consumes:
+693       - application/json
+694       description: Delete a user by ID
+695       operationId: delete-user
+696       parameters:
+697       - description: User ID
+698         in: path
+699         name: id
+700         required: true
+701         type: integer
+702       produces:
+703       - application/json
+704       responses: {}
+705       security:
+706       - BearerAuth: []
+707       summary: Delete a user
+708       tags:
+709       - user
+710     get:
+711       consumes:
+712       - application/json
+713       description: Get a user by ID
+714       operationId: get-user
+715       parameters:
+716       - description: User ID
+717         in: path
+718         name: id
+719         required: true
+720         type: integer
+721       produces:
+722       - application/json
+723       responses: {}
+724       security:
+725       - BearerAuth: []
+726       summary: Get a user
+727       tags:
+728       - user
+729     put:
+730       consumes:
+731       - application/json
+732       description: Update a user by ID
+733       operationId: update-user
+734       parameters:
+735       - description: User ID
+736         in: path
+737         name: id
+738         required: true
+739         type: integer
+740       - description: User data
+741         in: body
+742         name: user
+743         required: true
+744         schema:
+745           $ref: '#/definitions/handlers.UpdateUserRequest'
+746       produces:
+747       - application/json
+748       responses: {}
+749       security:
+750       - BearerAuth: []
+751       summary: Update a user
+752       tags:
+753       - user
+754   /users:
+755     get:
+756       consumes:
+757       - application/json
+758       operationId: get-users
+759       produces:
+760       - application/json
+761       responses: {}
+762       security:
+763       - BearerAuth: []
+764       summary: Get users
+765       tags:
+766       - user
+767   /waypoints:
+768     post:
+769       consumes:
+770       - application/json
+771       description: Adds a new waypoint to the specified route
+772       parameters:
+773       - description: Waypoint details
+774         in: body
+775         name: waypoint
+776         required: true
+777         schema:
+778           $ref: '#/definitions/handlers.CreateWaypointRequest'
+779       produces:
+780       - application/json
+781       responses: {}
+782       security:
+783       - BearerAuth: []
+784       summary: Add a waypoint to a route
+785       tags:
+786       - waypoint
+787   /waypoints/{waypoint_id}:
+788     delete:
+789       description: Deletes a waypoint
+790       parameters:
+791       - description: Waypoint ID
+792         in: path
+793         name: waypoint_id
+794         required: true
+795         type: integer
+796       produces:
+797       - application/json
+798       responses: {}
+799       security:
+800       - BearerAuth: []
+801       summary: Delete waypoint
+802       tags:
+803       - waypoint
+804     get:
+805       description: Retrieves the details of a waypoint
+806       parameters:
+807       - description: Waypoint ID
+808         in: path
+809         name: waypoint_id
+810         required: true
+811         type: integer
+812       produces:
+813       - application/json
+814       responses: {}
+815       security:
+816       - BearerAuth: []
+817       summary: Get waypoint details
+818       tags:
+819       - waypoint
+820     put:
+821       consumes:
+822       - application/json
+823       description: Updates the details of a waypoint
+824       parameters:
+825       - description: Waypoint ID
+826         in: path
+827         name: waypoint_id
+828         required: true
+829         type: integer
+830       - description: Waypoint details
+831         in: body
+832         name: waypoint
+833         required: true
+834         schema:
+835           $ref: '#/definitions/handlers.UpdateWaypointRequest'
+836       produces:
+837       - application/json
+838       responses: {}
+839       security:
+840       - BearerAuth: []
+841       summary: Update waypoint details
+842       tags:
+843       - waypoint
+844 securityDefinitions:
+845   BearerAuth:
+846     description: 'Provide the Bearer token in the format: "Bearer {token}"'
+847     in: header
+848     name: Authorization
+849     type: apiKey
+850 swagger: "2.0"
+
+ДОДАТОК Д
+Код взаємодії між сервером, клієнтом та базою даних
+
+     Приклад взаємодії з базою даних
+     
+001 package repository
+002
+003 import (
+004     "context"
+005     "wayra/internal/core/domain/interfaces"
+006
+007     "gorm.io/gorm"
+008 )
+009
+010 type GenericRepository[T any] struct {
+011     db *gorm.DB
+012 }
+013
+014 func NewRepository[T any](db *gorm.DB) *GenericRepository[T] {
+015     return &GenericRepository[T]{db: db}
+016 }
+017
+018 func (r *GenericRepository[T]) Add(ctx context.Context, entity *T) error {
+019     err := r.db.WithContext(ctx).Create(entity).Error
+020     if err != nil {
+021             return err
+022     }
+023
+024     if loader, ok := any(entity).(interfaces.RelationLoader); ok {
+025             return loader.LoadRelations(r.db.WithContext(ctx)).First(entity).Error
+026     }
+027
+028     return nil
+029 }
+030
+031 func (r *GenericRepository[T]) GetByID(ctx context.Context, id uint) (*T, error) {
+032     var entity T
+033     query := r.db.WithContext(ctx).Model(&entity).Where("id = ?", id)
+034
+035     if loader, ok := any(&entity).(interfaces.RelationLoader); ok {
+036             query = loader.LoadRelations(query)
+037     }
+038
+039     err := query.First(&entity).Error
+040     if err != nil {
+041             return nil, err
+042     }
+043
+044     return &entity, nil
+045 }
+046
+047 func (r *GenericRepository[T]) Where(ctx context.Context, params *T) ([]T, error) {
+048     var entities []T
+049     query := r.db.WithContext(ctx).Where(params)
+050
+051     err := query.Find(&entities).Error
+052     if err != nil {
+053             return nil, err
+054     }
+055
+056     return entities, nil
+057 }
+058
+059 func (r *GenericRepository[T]) Update(ctx context.Context, entity *T) error {
+060     err := r.db.WithContext(ctx).Model(entity).Updates(entity).Error
+061     if err != nil {
+062             return err
+063     }
+064     if loader, ok := any(entity).(interfaces.RelationLoader); ok {
+065             return loader.LoadRelations(r.db.WithContext(ctx)).First(entity).Error
+066     }
+067     return nil
+068 }
+069
+070 func (r *GenericRepository[T]) Delete(ctx context.Context, id uint) error {
+071     var entity T
+072     err := r.db.WithContext(ctx).Where("id = ?", id).Delete(&entity).Error
+073     if err != nil {
+074             return err
+075     }
+076
+077     return nil
+078 }
+079
+080 func (r *GenericRepository[T]) SkipTake(ctx context.Context, skip int, take int) (*[]T, error) {
+081     var entities []T
+082     query := r.db.WithContext(ctx).Offset(skip).Limit(take)
+083
+084     err := query.Find(&entities).Error
+085     if err != nil {
+086             return nil, err
+087     }
+088     return &entities, nil
+089 }
+090
+091 func (r *GenericRepository[T]) CountWhere(ctx context.Context, params *T) int64 {
+092     var count int64
+093     query := r.db.WithContext(ctx).Model(new(T)).Where(params)
+094
+095     if loader, ok := any(params).(interfaces.RelationLoader); ok {
+096             query = loader.LoadRelations(query)
+097     }
+098
+099     query.Count(&count)
+100     return count
+101 }
+     Приклад взаємодії з клієнтом
+
+001 package handlers
+002
+003 import (
+004     "context"
+005     "net/http"
+006     "strconv"
+007     "wayra/internal/core/domain/dtos"
+008     "wayra/internal/core/domain/models"
+009     "wayra/internal/core/port/services"
+010
+011     dtoMapper "github.com/dranikpg/dto-mapper"
+012     "github.com/gin-gonic/gin"
+013 )
+014
+015 type ProductHandler struct {
+016     productService         services.ProductService
+017     deliveryService        services.DeliveryService
+018     productCategoryService services.ProductCategoryService
+019     companyService         services.CompanyService
+020     userCompanyService     services.UserCompanyService
+021 }
+022
+023 func NewProductHandler(
+024     productService services.ProductService,
+025     deliveryService services.DeliveryService,
+026     productCategoryService services.ProductCategoryService,
+027     companyService services.CompanyService,
+028     userCompanyService services.UserCompanyService,
+029 ) *ProductHandler {
+030     return &ProductHandler{
+031             productService:         productService,
+032             deliveryService:        deliveryService,
+033             productCategoryService: productCategoryService,
+034             companyService:         companyService,
+035             userCompanyService:     userCompanyService,
+036     }
+037 }
+038
+039 type CreateProductRequest struct {
+040     Name        string  `gorm:"size:255;not null;column:name"`
+041     Weight      float64 `gorm:"not null;column:weight"`
+042     ProductType string  `json:"product_type" example:"Fruits | Vegetables | Frozen Foods | Dairy Products | Meat"`
+043     DeliveryID  uint    `gorm:"not null;column:delivery_id"`
+044 }
+045
+046 type UpdateProductRequest struct {
+047     Name        string  `gorm:"size:255;not null;column:name"`
+048     Weight      float64 `gorm:"not null;column:weight"`
+049     ProductType string  `json:"product_type"`
+050 }
+051
+052 // CreateProduct godoc
+053 // @Summary      Create a product
+054 // @Description  Create a product
+055 // @Tags         product
+056 // @Accept       json
+057 // @Produce      json
+058 // @Param        request body CreateProductRequest true "CreateProductRequest"
+059 // @Security     BearerAuth
+060 // @Router       /products [post]
+061 func (h *ProductHandler) AddProduct(c *gin.Context) {
+062     var productRequest CreateProductRequest
+063     if err := c.ShouldBindJSON(&productRequest); err != nil {
+064             c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+065             return
+066     }
+067
+068     userID, err := getUserIDFromToken(c)
+069     if err != nil {
+070             c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+071             return
+072     }
+073
+074     delivery, err := h.deliveryService.GetByID(context.Background(), productRequest.DeliveryID)
+075     if err != nil {
+076             c.JSON(http.StatusNotFound, gin.H{"error": "Delivery not found"})
+077             return
+078     }
+079
+080     userCompany, err := h.userCompanyService.Where(context.Background(), &models.UserCompany{
+081             UserID:    *userID,
+082             CompanyID: delivery.CompanyID,
+083     })
+084     if err != nil {
+085             c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+086             return
+087     }
+088
+089     if userCompany[0].Role != string(RoleAdmin) && userCompany[0].Role != string(RoleManager) {
+090             c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+091             return
+092     }
+093
+094     productCategory, err := h.productCategoryService.Where(context.Background(), &models.ProductCategory{
+095             Name: productRequest.ProductType,
+096     })
+097     if err != nil || len(productCategory) == 0 {
+098             c.JSON(http.StatusNotFound, gin.H{"error": "Product category not found"})
+099             return
+100     }
+101
+102     if productRequest.Weight <= 0 {
+103             c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid weight"})
+104             return
+105     }
+106
+107     product := &models.Product{
+108             Name:              productRequest.Name,
+109             Weight:            productRequest.Weight,
+110             ProductCategoryID: productCategory[0].ID,
+111             DeliveryID:        productRequest.DeliveryID,
+112     }
+113
+114     if err := h.productService.Create(context.Background(), product); err != nil {
+115             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+116             return
+117     }
+118
+119     productDTO := &dtos.ProductDTO{}
+120     if err = dtoMapper.Map(productDTO, product); err != nil {
+121             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+122             return
+123     }
+124
+125     c.JSON(http.StatusOK, productDTO)
+126 }
+127
+128 // GetProduct godoc
+129 // @Summary      Get a product
+130 // @Description  Get a product
+131 // @Tags         product
+132 // @Accept       json
+133 // @Produce      json
+134 // @Param        product_id path int true "Product ID"
+135 // @Security     BearerAuth
+136 // @Router       /products/{product_id} [get]
+137 func (h *ProductHandler) GetProduct(c *gin.Context) {
+138     productID, err := strconv.Atoi(c.Param("product_id"))
+139     if err != nil {
+140             c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID format"})
+141             return
+142     }
+143
+144     product, err := h.productService.GetByID(context.Background(), uint(productID))
+145     if err != nil {
+146             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+147             return
+148     }
+149
+150     userID, err := getUserIDFromToken(c)
+151     if err != nil {
+152             c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+153             return
+154     }
+155
+156     userCompany, err := h.userCompanyService.Where(context.Background(), &models.UserCompany{
+157             UserID:    *userID,
+158             CompanyID: product.Delivery.CompanyID,
+159     })
+160     if err != nil {
+161             c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+162             return
+163     }
+164
+165     if userCompany[0].Role != string(RoleAdmin) && userCompany[0].Role != string(RoleManager) {
+166             c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+167             return
+168     }
+169
+170     productDTO := &dtos.ProductDTO{}
+171     if err = dtoMapper.Map(productDTO, product); err != nil {
+172             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+173             return
+174     }
+175
+176     c.JSON(http.StatusOK, productDTO)
+177 }
+178
+179 // UpdateProduct godoc
+180 // @Summary      Update a product
+181 // @Description  Update a product
+182 // @Tags         product
+183 // @Accept       json
+184 // @Produce      json
+185 // @Param        product_id path int true "Product ID"
+186 // @Param        request body UpdateProductRequest true "UpdateProductRequest"
+187 // @Security     BearerAuth
+188 // @Router       /products/{product_id} [put]
+189 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
+190     var productRequest UpdateProductRequest
+191     if err := c.ShouldBindJSON(&productRequest); err != nil {
+192             c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+193             return
+194     }
+195
+196     productID, err := strconv.Atoi(c.Param("product_id"))
+197     if err != nil {
+198             c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID format"})
+199             return
+200     }
+201
+202     product, err := h.productService.GetByID(context.Background(), uint(productID))
+203     if err != nil {
+204             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+205             return
+206     }
+207
+208     userID, err := getUserIDFromToken(c)
+209     if err != nil {
+210             c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+211             return
+212     }
+213
+214     userCompany, err := h.userCompanyService.Where(context.Background(), &models.UserCompany{
+215             UserID:    *userID,
+216             CompanyID: product.Delivery.CompanyID,
+217     })
+218     if err != nil {
+219             c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+220             return
+221     }
+222
+223     if userCompany[0].Role != string(RoleAdmin) && userCompany[0].Role != string(RoleManager) {
+224             c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+225             return
+226     }
+227
+228     if productRequest.ProductType != "" {
+229             productCategory, err := h.productCategoryService.Where(context.Background(), &models.ProductCategory{
+230                     Name: productRequest.ProductType,
+231             })
+232             if err != nil || len(productCategory) == 0 {
+233                     c.JSON(http.StatusNotFound, gin.H{"error": "Product category not found"})
+234                     return
+235             }
+236             product.ProductCategoryID = productCategory[0].ID
+237     }
+238     if productRequest.Name != "" {
+239             product.Name = productRequest.Name
+240     }
+241     if productRequest.Weight != 0 {
+242             product.Weight = productRequest.Weight
+243     }
+244
+245     product.Delivery = models.Delivery{}
+246     product.ProductCategory = models.ProductCategory{}
+247
+248     if err := h.productService.Update(context.Background(), product); err != nil {
+249             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+250             return
+251     }
+252
+253     productDTO := &dtos.ProductDTO{}
+254     if err = dtoMapper.Map(productDTO, product); err != nil {
+255             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+256             return
+257     }
+258
+259     c.JSON(http.StatusOK, productDTO)
+260 }
+261
+262 // DeleteProduct godoc
+263 // @Summary      Delete a product
+264 // @Description  Delete a product
+265 // @Tags         product
+266 // @Accept       json
+267 // @Produce      json
+268 // @Param        product_id path int true "Product ID"
+269 // @Security     BearerAuth
+270 // @Router       /products/{product_id} [delete]
+271 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
+272     productID, err := strconv.Atoi(c.Param("product_id"))
+273     if err != nil {
+274             c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID format"})
+275             return
+276     }
+277
+278     product, err := h.productService.GetByID(context.Background(), uint(productID))
+279     if err != nil {
+280             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+281             return
+282     }
+283
+284     userID, err := getUserIDFromToken(c)
+285     if err != nil {
+286             c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+287             return
+288     }
+289
+290     userCompany, err := h.userCompanyService.Where(context.Background(), &models.UserCompany{
+291             UserID:    *userID,
+292             CompanyID: product.Delivery.CompanyID,
+293     })
+294     if err != nil {
+295             c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+296             return
+297     }
+298
+299     if userCompany[0].Role != string(RoleAdmin) && userCompany[0].Role != string(RoleManager) {
+300             c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+301             return
+302     }
+303
+304     if err := h.productService.Delete(context.Background(), uint(productID)); err != nil {
+305             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+306             return
+307     }
+308
+309     c.JSON(http.StatusOK, gin.H{"message": "Product deleted"})
+310 }
+ДОДАТОК Е
+Посилання на відео-звіт
+
+     Посилання : https://www.youtube.com/watch?v=i1dfce3N5ys
