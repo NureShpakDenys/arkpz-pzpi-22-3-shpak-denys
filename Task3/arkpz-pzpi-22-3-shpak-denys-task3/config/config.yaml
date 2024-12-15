@@ -1,0 +1,8 @@
+storage_path: "host=localhost user=postgres database=Wayra password=132435123"
+db_password: "132435123"
+http:
+  port: 8081
+  timeout: 10s
+auth:
+  secret: mysecret123
+  token_ttl: 24h

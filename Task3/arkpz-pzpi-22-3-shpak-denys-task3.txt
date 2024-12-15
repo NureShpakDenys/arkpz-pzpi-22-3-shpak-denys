@@ -1,0 +1,573 @@
+﻿Харківський національний університет радіоелектроніки
+Факультет комп'ютерних наук
+Катедра програмної інженерії
+
+
+
+
+ЗВІТ
+до лабораторної роботи №3
+з дисципліни  «Аналіз та рефакторинг коду»
+на тему: «РОЗРОБКА БІЗНЕС-ЛОГІКИ ТА ФУНКЦІЙ АДМІНІСТРУВАННЯ СЕРВЕРНОЇ ЧАСТИНИ ПРОГРАМНОЇ СИСТЕМИ»
+
+
+
+Виконав
+ст. гр. ПЗПІ-22-3
+Шпак Денис Олександрович
+
+Перевірив
+ст. викладач катедри ПІ
+Сокорчук Ігор Петрович
+
+
+
+Харків 2024
+1 МЕТА РОБОТИ
+
+     Метою даної лабораторної роботи є розробка бізнес-логіки та функцій адміністрування серверної частини.
+     
+2 ХІД РОБОТИ
+
+     	Під час роботи було створено UML-діаграми діяльності для відображення бізнес-логіки та функцій адміністрування серверної частини. Ці діаграми дозволили детально описати послідовність дій, що виконуються системою, а також взаємодію користувачів із функціоналом серверної частини. Для функцій серверної частини було складено діаграму взаємодії.
+     Зображення UML діаграм діяльності та взаємодії для серверної частини наведено у додатку А.
+     У процесі реалізації було написано бізнес-логіку із використанням методів регресійного аналізу, що дозволило вирішити завдання прогнозування та аналізу даних. Ці методи забезпечили надійність розрахунків та оптимізували процес прийняття рішень у системі.
+     Крім того, було розроблено функції адміністрування серверної частини, які надають адміністраторам можливість виконувати копіювання та відновлення бази даних. Ці функції є критично важливими для забезпечення безпеки та цілісності даних, а також для мінімізації ризиків втрати інформації. Розроблені можливості дозволяють системі ефективно підтримувати резервне копіювання, що підвищує її надійність та стійкість до можливих збоїв.
+     Код реалізації даних функцій наведено у додатку Б.
+     Відеозвіт із демонстрацією виконаної роботи доступний за посиланням, наведеним у додатку В.
+ВИСНОВКИ
+
+У результаті виконання лабораторної роботи було створено діаграми взаємодії та діяльності для серверної частини програмної системи. Було запроваджено код реалізації бізнес-логіки та функцій адміністрування серверної частини.     
+     
+     
+ДОДАТОК А
+UML діаграми діяльності та взаємодії для серверної частини
+
+
+Рисунок А.1 – Діаграма діяльності для функціоналу отримання оптимального маршруту
+
+Рисунок А.2 – Діаграма діяльності для функцій адміністрування
+
+
+Рисунок А.3 – Діаграма діяльності для отримання погодних попереджень на маршруті
+
+
+
+
+
+
+Рисунок А.4 – Діаграма взаємодії для функції отримання оптимального маршруту
+ДОДАТОК Б
+Код функцій бізнес-логіки та адміністрування
+
+001 package service
+002
+003 import (
+004     "context"
+005     "errors"
+006     "fmt"
+007     "math"
+008     "time"
+009     "wayra/internal/core/domain/models"
+010     "wayra/internal/core/domain/utils/analysis"
+011     utilsMath "wayra/internal/core/domain/utils/math"
+012     utilsTime "wayra/internal/core/domain/utils/time"
+013     "wayra/internal/core/port"
+014
+015     "log/slog"
+016 )
+017
+018 type RouteService struct {
+019     *GenericService[models.Route]
+020     waypointRepository   port.Repository[models.Waypoint]
+021     deliveryRepository   port.Repository[models.Delivery]
+022     sensorDataRepository port.Repository[models.SensorData]
+023 }
+024
+025 func NewRouteService(
+026     repo port.Repository[models.Route],
+027     waypointRepository port.Repository[models.Waypoint],
+028     deliveryRepository port.Repository[models.Delivery],
+029     sensorDataRepository port.Repository[models.SensorData],
+030 ) *RouteService {
+031     return &RouteService{
+032             GenericService:       NewGenericService(repo),
+033             waypointRepository:   waypointRepository,
+034             deliveryRepository:   deliveryRepository,
+035             sensorDataRepository: sensorDataRepository,
+036     }
+037 }
+038
+039 func (s *RouteService) GetOptimalRoute(
+040     ctx context.Context,
+041     delivery *models.Delivery,
+042     includeWeight bool,
+043     considerPerishable bool,
+044 ) (string, *analysis.PredictData, []float64, models.Route, error) {
+045     var predictData analysis.PredictData
+046     var coeffs []float64
+047     var optimalRoute *models.Route
+048     var additionalMessage string
+049
+050     routes, err := s.Where(ctx, &models.Route{CompanyID: delivery.CompanyID})
+051     if err != nil || len(routes) == 0 {
+052             return "", nil, nil, models.Route{}, errors.New("no routes found for the company")
+053     }
+054
+055     minDeliveryTime := math.MaxFloat64
+056     minHumidity := 85.0
+057     maxTemperature := 0.0
+058
+059     var deliveryMetrics []analysis.DeliveryMetrics
+060     for _, route := range routes {
+061             waypoints, err := s.waypointRepository.Where(ctx, &models.Waypoint{RouteID: route.ID})
+062             if err != nil {
+063                     return "", nil, nil, models.Route{}, err
+064             }
+065
+066             deliveries, err := s.deliveryRepository.Where(ctx, &models.Delivery{
+067                     Status:  "completed",
+068                     RouteID: route.ID,
+069             })
+070             if err != nil {
+071                     return "", nil, nil, models.Route{}, err
+072             }
+073
+074             for _, delivery := range deliveries {
+075                     data := CalculateRouteMetrics(delivery, waypoints, includeWeight)
+076                     if data == nil {
+077                             continue
+078                     }
+079
+080                     deliveryMetrics = append(deliveryMetrics, *data)
+081             }
+082     }
+083
+084     coeffs = analysis.LinearRegression(deliveryMetrics)
+085
+086     for _, route := range routes {
+087             waypoints, err := s.waypointRepository.Where(ctx, &models.Waypoint{RouteID: route.ID})
+088             if err != nil {
+089                     return "", nil, nil, models.Route{}, err
+090             }
+091
+092             latestSensorData := []models.SensorData{}
+093             for _, waypoint := range waypoints {
+094                     latestSensorData = append(
+095                             latestSensorData,
+096                             waypoint.SensorData[len(waypoint.SensorData)-1],
+097                     )
+098             }
+099
+100             avgTemp := 0.0
+101             avgHumidity := 0.0
+102             avgWindSpeed := 0.0
+103             avgPressure := 0.0
+104
+105             for _, sensorData := range latestSensorData {
+106                     avgTemp += sensorData.Temperature
+107                     avgHumidity += sensorData.Humidity
+108                     avgWindSpeed += sensorData.WindSpeed
+109                     avgPressure += sensorData.MeanPressure
+110             }
+111             avgData := models.SensorData{
+112                     Temperature:  avgTemp / float64(len(latestSensorData)),
+113                     Humidity:     avgHumidity / float64(len(latestSensorData)),
+114                     WindSpeed:    avgWindSpeed / float64(len(latestSensorData)),
+115                     MeanPressure: avgPressure / float64(len(latestSensorData)),
+116             }
+117
+118             totalWeight := 0.0
+119             isPerishable := false
+120
+121             for _, product := range delivery.Products {
+122                     if includeWeight {
+123                             totalWeight += product.Weight
+124                     }
+125                     if product.ProductCategory.IsPerishable {
+126                             isPerishable = true
+127                     }
+128             }
+129
+130             predictedSpeed := analysis.Predict(coeffs, avgData, totalWeight)
+131
+132             var distance float64
+133
+134             for i := 0; i < len(waypoints)-1; i++ {
+135                     distance += utilsMath.HaversineDistance(
+136                             waypoints[i].Latitude,
+137                             waypoints[i].Longitude,
+138                             waypoints[i+1].Latitude,
+139                             waypoints[i+1].Longitude,
+140                     )
+141             }
+142
+143             time := distance / predictedSpeed
+144
+145             if isPerishable && considerPerishable {
+146                     additionalMessage = "Recommended route depends on perishable products"
+147                     if time < minDeliveryTime {
+148                             minDeliveryTime = time
+149                             optimalRoute = &route
+150
+151                             predictData = analysis.PredictData{
+152                                     Distance: distance,
+153                                     Speed:    predictedSpeed,
+154                                     Time:     time,
+155                             }
+156                     }
+157             } else {
+158                     if avgData.Humidity < minHumidity && avgData.Temperature > maxTemperature {
+159                             additionalMessage = "Recommended route based on safety conditions"
+160                             if time < minDeliveryTime {
+161                                     minDeliveryTime = time
+162                                     optimalRoute = &route
+163
+164                                     predictData = analysis.PredictData{
+165                                             Distance: distance,
+166                                             Speed:    predictedSpeed,
+167                                             Time:     time,
+168                                     }
+169                             }
+170                     } else {
+171                             additionalMessage = "Recommended route depends on speed of the route"
+172                             if time < minDeliveryTime {
+173                                     minDeliveryTime = time
+174                                     optimalRoute = &route
+175
+176                                     predictData = analysis.PredictData{
+177                                             Distance: distance,
+178                                             Speed:    predictedSpeed,
+179                                             Time:     time,
+180                                     }
+181                             }
+182                     }
+183             }
+184     }
+185
+186     return additionalMessage, &predictData, coeffs, *optimalRoute, nil
+187 }
+188
+189 func CalculateRouteMetrics(delivery models.Delivery, waypoints []models.Waypoint, includeWeight bool) *analysis.DeliveryMetrics {
+190     speedData := analysis.DeliveryMetrics{}
+191     totalDistance := 0.0
+192     for i := 0; i < len(waypoints)-1; i++ {
+193             totalDistance += utilsMath.HaversineDistance(
+194                     waypoints[i].Latitude,
+195                     waypoints[i].Longitude,
+196                     waypoints[i+1].Latitude,
+197                     waypoints[i+1].Longitude,
+198             )
+199     }
+200
+201     sensorData := []models.SensorData{}
+202
+203     for _, waypoint := range waypoints {
+204             sensorData = append(sensorData, waypoint.SensorData...)
+205     }
+206
+207     tempSum := 0.0
+208     humiditySum := 0.0
+209     windSpeedSum := 0.0
+210     totalWeight := 0.0
+211     count := 0
+212
+213     for _, product := range delivery.Products {
+214             totalWeight += product.Weight
+215     }
+216
+217     duration, err := utilsTime.ParseDuration(delivery.Duration)
+218     if err != nil {
+219             slog.Error("Error parsing, duration: ", slog.Any("error", err.Error()))
+220             return nil
+221     }
+222
+223     for _, sensorData := range sensorData {
+224             oneHourBefore := delivery.Date.Add(-1 * time.Hour)
+225             oneHourAfter := delivery.Date.Add(time.Hour)
+226
+227             if sensorData.Date.After(oneHourBefore) && sensorData.Date.Before(oneHourAfter.Add(duration)) {
+228                     tempSum += sensorData.Temperature
+229                     humiditySum += sensorData.Humidity
+230                     windSpeedSum += sensorData.WindSpeed
+231                     count++
+232             }
+233     }
+234
+235     speedData = analysis.DeliveryMetrics{
+236             Temperature:   tempSum / float64(count),
+237             Humidity:      humiditySum / float64(count),
+238             WindSpeed:     windSpeedSum / float64(count),
+239             DeliverySpeed: totalDistance / duration.Hours(),
+240     }
+241
+242     if includeWeight {
+243             speedData.TotalWeight = totalWeight
+244     } else {
+245             speedData.TotalWeight = 0.0
+246     }
+247
+248     return &speedData
+249 }
+250
+251 func (s *RouteService) GetWeatherAlert(
+252     ctx context.Context,
+253     route models.Route,
+254 ) ([]models.WeatherAlert, error) {
+255     alerts := []models.WeatherAlert{}
+256
+257     if len(route.Waypoints) == 0 {
+258             return nil, errors.New("no waypoints found for the route")
+259     }
+260
+261     latestSensorData := []models.SensorData{}
+262     for _, waypoint := range route.Waypoints {
+263             latestSensorData = append(
+264                     latestSensorData,
+265                     waypoint.SensorData[len(waypoint.SensorData)-1],
+266             )
+267     }
+268
+269     if len(latestSensorData) == 0 {
+270             return nil, errors.New("no sensor data available for the route")
+271     }
+272
+273     existingAlertTypes := make(map[string]bool)
+274
+275     for _, data := range latestSensorData {
+276             if data.Temperature < 0 && data.Humidity > 80 {
+277                     if !existingAlertTypes["Ice Alert"] {
+278                             alerts = append(alerts, models.WeatherAlert{
+279                                     Type:    "Ice Alert",
+280                                     Message: "Potential ice formation detected due to low temperature and high humidity.",
+281                                     Details: fmt.Sprintf("Temperature: %.2fВ°C, Humidity: %.2f%%", data.Temperature, data.Humidity),
+282                             })
+283                             existingAlertTypes["Ice Alert"] = true
+284                     }
+285             }
+286
+287             if data.WindSpeed > 20 {
+288                     if !existingAlertTypes["Storm Alert"] {
+289                             alerts = append(alerts, models.WeatherAlert{
+290                                     Type:    "Storm Alert",
+291                                     Message: "High wind speed detected, potential storm risk.",
+292                                     Details: fmt.Sprintf("Wind Speed: %.2f m/s", data.WindSpeed),
+293                             })
+294                             existingAlertTypes["Storm Alert"] = true
+295                     }
+296             }
+297
+298             if data.MeanPressure < 980 {
+299                     if !existingAlertTypes["Low Pressure Alert"] {
+300                             alerts = append(alerts, models.WeatherAlert{
+301                                     Type:    "Low Pressure Alert",
+302                                     Message: "Low atmospheric pressure detected, potential severe weather conditions.",
+303                                     Details: fmt.Sprintf("Pressure: %.2f hPa", data.MeanPressure),
+304                             })
+305                             existingAlertTypes["Low Pressure Alert"] = true
+306                     }
+307             }
+308
+309             if data.Temperature > 35 {
+310                     if !existingAlertTypes["Heat Alert"] {
+311                             alerts = append(alerts, models.WeatherAlert{
+312                                     Type:    "Heat Alert",
+313                                     Message: "High temperature detected, risk of heat-related issues.",
+314                                     Details: fmt.Sprintf("Temperature: %.2fВ°C", data.Temperature),
+315                             })
+316                             existingAlertTypes["Heat Alert"] = true
+317                     }
+318             }
+319
+320             if data.Humidity < 20 {
+321                     if !existingAlertTypes["Low Humidity Alert"] {
+322                             alerts = append(alerts, models.WeatherAlert{
+323                                     Type:    "Low Humidity Alert",
+324                                     Message: "Low humidity detected, risk of dry conditions.",
+325                                     Details: fmt.Sprintf("Humidity: %.2f%%", data.Humidity),
+326                             })
+327                             existingAlertTypes["Low Humidity Alert"] = true
+328                     }
+329             }
+330
+331             if data.WindSpeed > 30 && data.Temperature < 5 {
+332                     if !existingAlertTypes["Cold Storm Alert"] {
+333                             alerts = append(alerts, models.WeatherAlert{
+334                                     Type:    "Cold Storm Alert",
+335                                     Message: "High wind speed combined with low temperature detected, risk of severe cold storm.",
+336                                     Details: fmt.Sprintf("Wind Speed: %.2f m/s, Temperature: %.2fВ°C", data.WindSpeed, data.Temperature),
+337                             })
+338                             existingAlertTypes["Cold Storm Alert"] = true
+339                     }
+340             }
+341     }
+342
+343     return alerts, nil
+344 }
+
+001 package handlers
+002
+003 import (
+004     "context"
+005     "fmt"
+006     "net/http"
+007     "os"
+008     "os/exec"
+009     "wayra/internal/core/port/services"
+010
+011     "github.com/gin-gonic/gin"
+012 )
+013
+014 type AdminHandler struct {
+015     dbPassword  string
+016     userService services.UserService
+017 }
+018
+019 func NewAdminHandler(dbPassword string, userService services.UserService) *AdminHandler {
+020     return &AdminHandler{
+021             dbPassword:  dbPassword,
+022             userService: userService,
+023     }
+024 }
+025
+026 type BackupDatabaseRequest struct {
+027     BackupPath string `json:"backup_path"`
+028 }
+029
+030 // BackupDatabase godoc
+031 // @Summary Backup the database
+032 // @Description Backup the database
+033 // @Tags admin
+034 // @Accept json
+035 // @Produce json
+036 // @Param BackupDatabaseRequest body BackupDatabaseRequest true "Backup path"
+037 // @Security     BearerAuth
+038 // @Success 200 {string} string "Backup created"
+039 // @Router /admin/backup [post]
+040 func (h *AdminHandler) BackupDatabase(c *gin.Context) {
+041     var req BackupDatabaseRequest
+042     if err := c.ShouldBindJSON(&req); err != nil {
+043             c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+044             return
+045     }
+046
+047     userID, err := getUserIDFromToken(c)
+048     if err != nil {
+049             c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+050             return
+051     }
+052
+053     user, err := h.userService.GetByID(context.Background(), *userID)
+054     if err != nil {
+055             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+056             return
+057     }
+058
+059     if user.Role.Name != "admin" {
+060             c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+061             return
+062     }
+063
+064     cmd := exec.Command(
+065             "pg_dump",
+066             "--dbname=Wayra",
+067             "--schema=public",
+068             fmt.Sprintf("--file=%s", req.BackupPath),
+069             "--data-only",
+070             "--format=c",
+071             "--username=postgres",
+072             "--host=localhost",
+073             "--port=5432",
+074     )
+075     cmd.Env = append(os.Environ(), "PGPASSWORD="+h.dbPassword)
+076
+077     if err := cmd.Run(); err != nil {
+078             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+079             return
+080     }
+081
+082     c.JSON(http.StatusOK, "Backup created")
+083 }
+084
+085 // RestoreDatabase godoc
+086 // @Summary Restore the database
+087 // @Description Restore the database
+088 // @Tags admin
+089 // @Accept json
+090 // @Produce json
+091 // @Param BackupDatabaseRequest body BackupDatabaseRequest true "Backup path"
+092 // @Security     BearerAuth
+093 // @Success 200 {string} string "Database restored"
+094 // @Router /admin/restore [post]
+095 func (h *AdminHandler) RestoreDatabase(c *gin.Context) {
+096     var req BackupDatabaseRequest
+097     if err := c.ShouldBindJSON(&req); err != nil {
+098             c.JSON(http.StatusBadRequest, gin.H{"error getting request": err.Error()})
+099             return
+100     }
+101
+102     userID, err := getUserIDFromToken(c)
+103     if err != nil {
+104             c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+105             return
+106     }
+107
+108     user, err := h.userService.GetByID(context.Background(), *userID)
+109     if err != nil {
+110             c.JSON(http.StatusInternalServerError, gin.H{"error getting user by id": err.Error()})
+111             return
+112     }
+113
+114     if user.Role.Name != "admin" {
+115             c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+116             return
+117     }
+118
+119     truncateCmd := exec.Command(
+120             "psql",
+121             "--dbname=Wayra",
+122             "--username=postgres",
+123             "--host=localhost",
+124             "--port=5432",
+125             "-c",
+126             "TRUNCATE TABLE roles, users, companies, routes, deliveries, product_categories, products, waypoints, sensor_data, user_companies RESTART IDENTITY CASCADE;",
+127     )
+128     truncateCmd.Env = append(os.Environ(), "PGPASSWORD="+h.dbPassword)
+129
+130     if err := truncateCmd.Run(); err != nil {
+131             c.JSON(http.StatusInternalServerError, gin.H{"error while truncating": err.Error()})
+132             return
+133     }
+134
+135     restoreCmd := exec.Command(
+136             "pg_restore",
+137             "--no-owner",
+138             "--role=postgres",
+139             "--dbname=Wayra",
+140             "--format=c",
+141             "-v",
+142             "--clean",
+143             "--if-exists",
+144             "--host=localhost",
+145             "--port=5432",
+146             "--username=postgres",
+147             req.BackupPath,
+148     )
+149     restoreCmd.Stdout = os.Stdout
+150     restoreCmd.Stderr = os.Stderr
+151     restoreCmd.Env = append(os.Environ(), "PGPASSWORD="+h.dbPassword)
+152     if err := restoreCmd.Run(); err != nil {
+153             c.JSON(http.StatusInternalServerError, gin.H{"error while restoring": err.Error()})
+154             return
+155     }
+156
+157     c.JSON(http.StatusOK, "Database restored")
+158 }
+ДОДАТОК В
+Посилання на відеозвіт
+
+     Посилання: https://youtu.be/SwDFGHjSKuA
+
+
+
+
