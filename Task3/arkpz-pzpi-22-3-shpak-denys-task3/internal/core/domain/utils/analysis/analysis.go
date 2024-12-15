@@ -1,4 +1,6 @@
-package analysis
+// Package analysis contains the functions to analyze the data of the deliveries
+// and predict the delivery speed
+package analysis // import "wayra/internal/core/domain/utils/analysis"
 
 import (
 	"fmt"
@@ -6,21 +8,26 @@ import (
 	utilsMath "wayra/internal/core/domain/utils/math"
 )
 
+// DeliveryMetrics is a struct that contains the metrics of a delivery
 type DeliveryMetrics struct {
-	Temperature float64
-	Humidity    float64
-	WindSpeed   float64
-	TotalWeight float64
+	Temperature float64 // Temperature in Celsius
+	Humidity    float64 // Humidity in percentage
+	WindSpeed   float64 // Wind speed in m/s
+	TotalWeight float64 // Total weight in kg
 
-	DeliverySpeed float64
+	DeliverySpeed float64 // Delivery speed in km/h
 }
 
+// PredictData is a struct that contains the data to predict the delivery speed
 type PredictData struct {
-	Distance float64
-	Speed    float64
-	Time     float64
+	Distance float64 // Distance in km
+	Speed    float64 // Speed in km/h
+	Time     float64 // Time in hours
 }
 
+// PredictedData is a struct that contains the predicted data
+// data: the predicted data
+// return: the predicted data
 func LinearRegression(data []DeliveryMetrics) []float64 {
 	n := len(data)
 
@@ -131,6 +138,13 @@ func LinearRegression(data []DeliveryMetrics) []float64 {
 	return []float64{beta0, betaTemperature, betaHumidity, betaWindSpeed, betaTotalWeight, error}
 }
 
+// CalculateBeta calculates the beta value of regression
+// sumX: sum of the X values
+// sumY: sum of the Y values
+// sumXY: sum of the X*Y values
+// sumXSquared: sum of the X^2 values
+// n: number of elements
+// return: the beta value
 func CalculateBeta(sumX, sumY, sumXY, sumXSquared float64, n int) float64 {
 	if sumX == 0 && sumXSquared == 0 {
 		return 0
@@ -139,6 +153,11 @@ func CalculateBeta(sumX, sumY, sumXY, sumXSquared float64, n int) float64 {
 	return (sumX*sumY - float64(n)*sumXY) / (sumX*sumX - float64(n)*sumXSquared)
 }
 
+// Predict predicts the delivery speed
+// coeffs: the coefficients of the regression
+// input: the input data
+// totalWeight: the total weight of the delivery
+// return: the predicted delivery speed
 func Predict(coeffs []float64, input models.SensorData, totalWeight float64) float64 {
 	features := []float64{
 		input.Temperature,

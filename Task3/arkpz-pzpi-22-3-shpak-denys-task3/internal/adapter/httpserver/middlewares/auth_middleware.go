@@ -1,4 +1,5 @@
-package middlewares
+// Package middlewares provides the middleware functions for the http server
+package middlewares // import "wayra/internal/adapter/httpserver/middlewares"
 
 import (
 	"log/slog"
@@ -10,6 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// AuthMiddleware is a middleware that checks if the request has a valid token
+// log: logger
+// authService: service to validate the token
+// returns: gin.HandlerFunc
 func AuthMiddleware(
 	log *slog.Logger,
 	authService services.AuthService,

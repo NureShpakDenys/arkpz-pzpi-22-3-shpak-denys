@@ -1,4 +1,4 @@
-package handlers
+package handlers // import "wayra/internal/adapter/httpserver/handlers"
 
 import (
 	"context"
@@ -12,14 +12,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ProductHandler is a struct to handle product requests
 type ProductHandler struct {
-	productService         services.ProductService
-	deliveryService        services.DeliveryService
-	productCategoryService services.ProductCategoryService
-	companyService         services.CompanyService
-	userCompanyService     services.UserCompanyService
+	productService         services.ProductService // ProductService is a service for product operations
+	deliveryService        services.DeliveryService // DeliveryService is a service for delivery operations
+	productCategoryService services.ProductCategoryService // ProductCategoryService is a service for product category operations
+	companyService         services.CompanyService // CompanyService is a service for company operations
+	userCompanyService     services.UserCompanyService // UserCompanyService is a service for user company operations
 }
 
+// NewProductHandler creates a new ProductHandler
+// productService: ProductService is a service for product operations
+// deliveryService: DeliveryService is a service for delivery operations
+// productCategoryService: ProductCategoryService is a service for product category operations
+// companyService: CompanyService is a service for company operations
+// userCompanyService: UserCompanyService is a service for user company operations
+// returns a new ProductHandler
 func NewProductHandler(
 	productService services.ProductService,
 	deliveryService services.DeliveryService,
@@ -36,16 +44,37 @@ func NewProductHandler(
 	}
 }
 
+// CreateProductRequest is a struct to bind request body for creating a product
 type CreateProductRequest struct {
+	// Name is the name of the product
+	// example: Apple
 	Name        string  `gorm:"size:255;not null;column:name"`
+
+	// Weight is the weight of the product
+	// example: 0.5
 	Weight      float64 `gorm:"not null;column:weight"`
+
+	// ProductType is the type of the product
+	// example: Fruits
 	ProductType string  `json:"product_type" example:"Fruits | Vegetables | Frozen Foods | Dairy Products | Meat"`
+
+	// DeliveryID is the ID of the delivery
+	// example: 1
 	DeliveryID  uint    `gorm:"not null;column:delivery_id"`
 }
 
+// UpdateProductRequest is a struct to bind request body for updating a product
 type UpdateProductRequest struct {
+	// Name is the name of the product
+	// example: Apple
 	Name        string  `gorm:"size:255;not null;column:name"`
+
+	// Weight is the weight of the product
+	// example: 0.5
 	Weight      float64 `gorm:"not null;column:weight"`
+
+	// ProductType is the type of the product
+	// example: Fruits
 	ProductType string  `json:"product_type"`
 }
 

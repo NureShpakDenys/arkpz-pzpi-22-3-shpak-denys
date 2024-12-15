@@ -1,9 +1,10 @@
-package services
+package services // import "wayra/internal/core/port/services"
 
 import (
 	"context"
 )
 
+// Service is the interface that wraps the basic CRUD operations
 type Service[T any] interface {
 	Create(ctx context.Context, entity *T) error
 	GetByID(ctx context.Context, id uint) (*T, error)

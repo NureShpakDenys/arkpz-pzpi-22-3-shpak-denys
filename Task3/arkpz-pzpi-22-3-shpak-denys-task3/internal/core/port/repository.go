@@ -1,7 +1,9 @@
-package port
+// Package port provides the repository interface for the core domain.
+package port // import "wayra/internal/core/port"
 
 import "context"
 
+// Repository is the interface that wraps the basic CRUD operations.
 type Repository[T any] interface {
 	Add(ctx context.Context, entity *T) error
 	GetByID(ctx context.Context, id uint) (*T, error)

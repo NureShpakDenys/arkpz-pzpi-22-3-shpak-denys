@@ -1,4 +1,5 @@
-package repository
+// Package repository implements the repository interfaces
+package repository // import "wayra/internal/adapter/repository"
 
 import (
 	"wayra/internal/core/domain/models"
@@ -7,10 +8,16 @@ import (
 	"gorm.io/gorm"
 )
 
+// NewGORMDB creates a new GORM database connection
+// connectionString: connection string to the database
+// returns: *gorm.DB, error
 func NewGORMDB(connectionString string) (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(connectionString), &gorm.Config{})
 }
 
+// AutoMigrate runs the auto migration for the models
+// db: database connection
+// returns: error
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&models.Company{},

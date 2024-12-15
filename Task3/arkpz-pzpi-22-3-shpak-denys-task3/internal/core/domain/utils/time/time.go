@@ -1,4 +1,5 @@
-package time
+// Package time provides utility functions for time operations.
+package time // import "wayra/internal/core/domain/utils/time"
 
 import (
 	"fmt"
@@ -7,6 +8,9 @@ import (
 	"time"
 )
 
+// ParseDuration parses a duration string in the format "HH:MM:SS" and returns a time.Duration.
+// durationStr: a string in the format "HH:MM:SS".
+// Returns a time.Duration and an error if the duration string is invalid.
 func ParseDuration(durationStr string) (time.Duration, error) {
 	parts := strings.Split(durationStr, ":")
 	if len(parts) != 3 {

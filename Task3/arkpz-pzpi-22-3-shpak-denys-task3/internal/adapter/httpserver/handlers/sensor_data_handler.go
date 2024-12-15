@@ -1,4 +1,4 @@
-package handlers
+package handlers // import "wayra/internal/adapter/httpserver/handlers"
 
 import (
 	"context"
@@ -13,12 +13,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// SensorDataHandler represents the handler for managing SensorData
 type SensorDataHandler struct {
-	sensorDataService  services.SensorDataService
-	waypointService    services.WaypointService
-	userCompanyService services.UserCompanyService
+	sensorDataService  services.SensorDataService  // is the service for managing SensorData
+	waypointService    services.WaypointService    // is the service for managing Waypoints
+	userCompanyService services.UserCompanyService // is the service for managing UserCompany
 }
 
+// NewSensorDataHandler creates a new SensorDataHandler
+// sensorDataService: is the service for managing SensorData
+// waypointService: is the service for managing Waypoints
+// userCompanyService: is the service for managing UserCompany
+// returns a new SensorDataHandler
 func NewSensorDataHandler(
 	sensorDataService services.SensorDataService,
 	waypointService services.WaypointService,
@@ -31,17 +37,38 @@ func NewSensorDataHandler(
 	}
 }
 
+// CreateSensorDataRequest represents the request for creating a SensorData
 type CreateSensorDataRequest struct {
-	Date        string  `json:"date" example:"2021-09-01T12:00:00Z"`
+	// Date is the date and time when the sensor data was recorded
+	// example: 2021-09-01T12:00:00Z
+	Date string `json:"date" example:"2021-09-01T12:00:00Z"`
+
+	// Temperature is the temperature recorded by the sensor
+	// example: 25.5
 	Temperature float64 `json:"temperature" example:"25.5"`
-	Humidity    float64 `json:"humidity" example:"50.0"`
-	WaypointID  uint    `json:"waypoint_id"`
+
+	// Humidity is the humidity recorded by the sensor
+	// example: 50.0
+	Humidity float64 `json:"humidity" example:"50.0"`
+
+	// WaypointID is the ID of the waypoint where the sensor data was recorded
+	// example: 1
+	WaypointID uint `json:"waypoint_id"`
 }
 
+// UpdateSensorDataRequest represents the request for updating a SensorData
 type UpdateSensorDataRequest struct {
-	Date        string  `json:"date" example:"2021-09-01T12:00:00Z"`
+	// Date is the date and time when the sensor data was recorded
+	// example: 2021-09-01T12:00:00Z
+	Date string `json:"date" example:"2021-09-01T12:00:00Z"`
+
+	// Temperature is the temperature recorded by the sensor
+	// example: 25.5
 	Temperature float64 `json:"temperature" example:"25.5"`
-	Humidity    float64 `json:"humidity" example:"50.0"`
+
+	// Humidity is the humidity recorded by the sensor
+	// example: 50.0
+	Humidity float64 `json:"humidity" example:"50.0"`
 }
 
 // AddSensorData godoc
@@ -157,6 +184,16 @@ func (h *SensorDataHandler) GetSensorData(c *gin.Context) {
 	c.JSON(http.StatusOK, sensorDataDTO)
 }
 
+// UpdateSensorData godoc
+// @Summary      Update sensor data by ID
+// @Description  Updates sensor data with the given ID
+// @Tags         sensor
+// @Accept       json
+// @Produce      json
+// @Param        sensor_data_id path int true "Sensor Data ID"
+// @Param        sensor_data body UpdateSensorDataRequest true "Sensor data details"
+// @Security     BearerAuth
+// @Router       /sensor-data/{sensor_data_id} [put]
 func (h *SensorDataHandler) UpdateSensorData(c *gin.Context) {
 	sensorDataID, err := strconv.Atoi(c.Param("sensor_data_id"))
 	if err != nil {
@@ -223,6 +260,14 @@ func (h *SensorDataHandler) UpdateSensorData(c *gin.Context) {
 	c.JSON(http.StatusOK, sensorDataDTO)
 }
 
+// DeleteSensorData godoc
+// @Summary      Delete sensor data by ID
+// @Description  Deletes sensor data with the given ID
+// @Tags         sensor
+// @Produce      json
+// @Param        sensor_data_id path int true "Sensor Data ID"
+// @Security     BearerAuth
+// @Router       /sensor-data/{sensor_data_id} [delete]
 func (h *SensorDataHandler) DeleteSensorData(c *gin.Context) {
 	sensorDataID, err := strconv.Atoi(c.Param("sensor_data_id"))
 	if err != nil {

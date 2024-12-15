@@ -1,4 +1,4 @@
-package handlers
+package handlers // import "wayra/internal/adapter/httpserver/handlers"
 
 import (
 	"context"
@@ -13,13 +13,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// RouteHandler is a handler for route related requests
 type RouteHandler struct {
-	routeService       services.RouteService
-	companyService     services.CompanyService
-	userCompanyService services.UserCompanyService
-	deliveryService    services.DeliveryService
+	routeService       services.RouteService // service to handle route related operations
+	companyService     services.CompanyService // service to handle company related operations
+	userCompanyService services.UserCompanyService // service to handle user-company related operations
+	deliveryService    services.DeliveryService // service to handle delivery related operations
 }
 
+// NewRoutesHandler creates a new RouteHandler
+// routeService: service to handle route related operations
+// companyService: service to handle company related operations
+// userCompanyService: service to handle user-company related operations
+// deliveryService: service to handle delivery related operations
+// returns: a new RouteHandler
 func NewRoutesHandler(
 	routeService services.RouteService,
 	companyService services.CompanyService,
@@ -34,12 +41,21 @@ func NewRoutesHandler(
 	}
 }
 
+// CreateRouteRequest represents the request body for creating a route
 type CreateRouteRequest struct {
+	// Name of the route
+	// example: Route 1
 	Name      string `json:"name" example:"Route 1"`
+
+	// ID of the company to which the route belongs
+	// example: 1
 	CompanyID uint   `json:"company_id"`
 }
 
+// UpdateRouteRequest represents the request body for updating a route
 type UpdateRouteRequest struct {
+	// Name of the route
+	// example: Route 1
 	Name string `json:"name" example:"Route 1"`
 }
 

@@ -1,4 +1,5 @@
-package digcontainer
+// Package digcontainer provides a function to build a dig container with all the dependencies
+package digcontainer // import "wayra/internal/digcontainer"
 
 import (
 	"wayra/internal/adapter/config"
@@ -16,6 +17,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// BuildContainer creates a dig container with all the dependencies
+// Returns a pointer to the container
 func BuildContainer() *dig.Container {
 	container := dig.New()
 

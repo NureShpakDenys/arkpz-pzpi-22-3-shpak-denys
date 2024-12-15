@@ -1,4 +1,4 @@
-package handlers
+package handlers // import "wayra/internal/adapter/httpserver/handlers"
 
 import (
 	"context"
@@ -14,12 +14,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// DeliveryHandler is a struct to handle delivery requests
 type DeliveryHandler struct {
-	deliveryService    services.DeliveryService
-	companyService     services.CompanyService
-	userCompanyService services.UserCompanyService
+	deliveryService    services.DeliveryService    // Delivery service
+	companyService     services.CompanyService     // Company service
+	userCompanyService services.UserCompanyService // UserCompany service
 }
 
+// DeliveryStatus is a type to represent the status of a delivery
+// deliveryService: Service for delivery operations
+// companyService: Service for company operations
+// userCompanyService: Service for user company operations
+// returns: DeliveryHandler struct
 func NewDeliveryHandler(
 	deliveryService services.DeliveryService,
 	companyService services.CompanyService,
@@ -32,13 +38,25 @@ func NewDeliveryHandler(
 	}
 }
 
+// CreateDeliveryRequest is a struct to represent the request to create a delivery
 type CreateDeliveryRequest struct {
-	CompanyID uint   `json:"company_id"`
-	Date      string `json:"date" example:"2023-09-01"`
+	// CompanyID is the ID of the company
+	// example: 1
+	CompanyID uint `json:"company_id"`
+
+	// Date is the date of the delivery
+	// example: 2023-09-01
+	Date string `json:"date" example:"2023-09-01"`
 }
 
+// UpdateDeliveryRequest is a struct to represent the request to update a delivery
 type UpdateDeliveryRequest struct {
-	Date   string `json:"date" example:"2024-08-01"`
+	// Date is the date of the delivery
+	// example: 2024-08-01
+	Date string `json:"date" example:"2024-08-01"`
+
+	// Status is the status of the delivery
+	// example: completed
 	Status string `json:"status" example:"completed"`
 }
 
@@ -95,8 +113,8 @@ func (h *DeliveryHandler) CreateDelivery(c *gin.Context) {
 	}
 
 	delivery := &models.Delivery{
-		Status: NotStarted,
-		Date:   date,
+		Status:    NotStarted,
+		Date:      date,
 		Duration:  "0 hour",
 		CompanyID: deliveryRequest.CompanyID,
 	}

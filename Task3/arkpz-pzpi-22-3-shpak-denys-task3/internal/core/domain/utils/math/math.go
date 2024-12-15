@@ -1,7 +1,12 @@
-package math
+// Package math provides mathematical functions for the domain layer.
+// This package is used to perform mathematical operations on data.
+package math // import "wayra/internal/core/domain/utils/math"
 
 import "math"
 
+// Transpose returns the transpose of a matrix.
+// matrix: a 2D slice of float64.
+// returns: a 2D slice of float64.
 func Transpose(matrix [][]float64) [][]float64 {
 	rows := len(matrix)
 	cols := len(matrix[0])
@@ -17,6 +22,10 @@ func Transpose(matrix [][]float64) [][]float64 {
 	return result
 }
 
+// MultiplyMatrices returns the product of two matrices.
+// a: a 2D slice of float64.
+// b: a 2D slice of float64.
+// returns: a 2D slice of float64.
 func MultiplyMatrices(a, b [][]float64) [][]float64 {
 	rowsA := len(a)
 	colsA := len(a[0])
@@ -35,6 +44,9 @@ func MultiplyMatrices(a, b [][]float64) [][]float64 {
 	return result
 }
 
+// Inverse returns the inverse of a matrix.
+// matrix: a 2D slice of float64.
+// returns: a 2D slice of float64.
 func Inverse(matrix [][]float64) [][]float64 {
 
 	n := len(matrix)
@@ -87,6 +99,12 @@ func Inverse(matrix [][]float64) [][]float64 {
 	return inverse
 }
 
+// HaversineDistance returns the distance between two points on the Earth's surface.
+// lat1: latitude of the first point.
+// lon1: longitude of the first point.
+// lat2: latitude of the second point.
+// lon2: longitude of the second point.
+// returns: a float64 - the distance between the two points.
 func HaversineDistance(lat1, lon1, lat2, lon2 float64) float64 {
 	const R = 6371
 	lat1Rad := lat1 * math.Pi / 180
@@ -102,6 +120,9 @@ func HaversineDistance(lat1, lon1, lat2, lon2 float64) float64 {
 	return R * c
 }
 
+// Mean returns the mean of a slice of float64.
+// data: a slice of float64.
+// returns: a float64 - the mean of the data.
 func Mean(data []float64) float64 {
 	sum := 0.0
 	for _, value := range data {
@@ -110,6 +131,9 @@ func Mean(data []float64) float64 {
 	return sum / float64(len(data))
 }
 
+// StdDev returns the standard deviation of a slice of float64.
+// data: a slice of float64.
+// returns: a float64 - the standard deviation of the data.
 func StdDev(data []float64) float64 {
 	mean := Mean(data)
 	sumSquares := 0.0
@@ -121,6 +145,9 @@ func StdDev(data []float64) float64 {
 	return math.Sqrt(variance)
 }
 
+// Square returns the square of each element in a slice of float64.
+// data: a slice of float64.
+// returns: a slice of float64.
 func Square(data []float64) []float64 {
 	result := make([]float64, len(data))
 	for i, value := range data {
@@ -129,6 +156,10 @@ func Square(data []float64) []float64 {
 	return result
 }
 
+// Multiply returns the element-wise product of two slices of float64.
+// a: a slice of float64.
+// b: a slice of float64.
+// returns: a slice of float64.
 func Multiply(a, b []float64) []float64 {
 	result := make([]float64, len(a))
 	for i := range result {
@@ -137,6 +168,9 @@ func Multiply(a, b []float64) []float64 {
 	return result
 }
 
+// Sum returns the sum of a slice of float64.
+// data: a slice of float64.
+// returns: a float64 - the sum of the data.
 func Sum(data []float64) float64 {
 	sum := 0.0
 	for _, value := range data {

@@ -1,4 +1,4 @@
-package service
+package service // import "wayra/internal/core/service"
 
 import (
 	"context"
@@ -15,13 +15,20 @@ import (
 	"log/slog"
 )
 
+// RouteService is a struct that defines the service for the Route model
 type RouteService struct {
-	*GenericService[models.Route]
-	waypointRepository   port.Repository[models.Waypoint]
-	deliveryRepository   port.Repository[models.Delivery]
-	sensorDataRepository port.Repository[models.SensorData]
+	*GenericService[models.Route]                                    // Embedding the GenericService struct for the Route model
+	waypointRepository            port.Repository[models.Waypoint]   // Repository for the Waypoint model
+	deliveryRepository            port.Repository[models.Delivery]   // Repository for the Delivery model
+	sensorDataRepository          port.Repository[models.SensorData] // Repository for the SensorData model
 }
 
+// NewRouteService is a function that creates a new RouteService instance
+// repo: Repository for the Route model
+// waypointRepository: Repository for the Waypoint model
+// deliveryRepository: Repository for the Delivery model
+// sensorDataRepository: Repository for the SensorData model
+// Returns a pointer to the RouteService instance
 func NewRouteService(
 	repo port.Repository[models.Route],
 	waypointRepository port.Repository[models.Waypoint],
@@ -36,6 +43,12 @@ func NewRouteService(
 	}
 }
 
+// GetOptimalRoute is a function that returns the optimal route for a delivery
+// ctx: Context for the request
+// delivery: Delivery for which the optimal route is to be found
+// includeWeight: Boolean to include weight in the calculation
+// considerPerishable: Boolean to consider perishable products in the calculation
+// Returns the additional message, predict data, coefficients, optimal route, and error
 func (s *RouteService) GetOptimalRoute(
 	ctx context.Context,
 	delivery *models.Delivery,
@@ -186,6 +199,11 @@ func (s *RouteService) GetOptimalRoute(
 	return additionalMessage, &predictData, coeffs, *optimalRoute, nil
 }
 
+// CalculateRouteMetrics is a function that calculates the metrics for a delivery route
+// delivery: Delivery for which the metrics are to be calculated
+// waypoints: Waypoints for the delivery route
+// includeWeight: Boolean to include weight in the calculation
+// Returns the calculated metrics for the delivery route
 func CalculateRouteMetrics(delivery models.Delivery, waypoints []models.Waypoint, includeWeight bool) *analysis.DeliveryMetrics {
 	speedData := analysis.DeliveryMetrics{}
 	totalDistance := 0.0
@@ -248,6 +266,10 @@ func CalculateRouteMetrics(delivery models.Delivery, waypoints []models.Waypoint
 	return &speedData
 }
 
+// GetWeatherAlert is a function that returns the weather alerts for a route
+// ctx: Context for the request
+// route: Route for which the weather alerts are to be found
+// Returns the weather alerts and error
 func (s *RouteService) GetWeatherAlert(
 	ctx context.Context,
 	route models.Route,

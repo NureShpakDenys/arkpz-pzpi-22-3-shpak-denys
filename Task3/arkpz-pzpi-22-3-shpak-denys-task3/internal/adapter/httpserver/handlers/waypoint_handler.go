@@ -1,4 +1,4 @@
-package handlers
+package handlers // import "wayra/internal/adapter/httpserver/handlers"
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// WaypointHandler is
 type WaypointHandler struct {
 	waypointService    services.WaypointService
 	routeService       services.RouteService
@@ -19,6 +20,12 @@ type WaypointHandler struct {
 	userCompanyService services.UserCompanyService
 }
 
+// NewWaypointHandler is a constructor for WaypointHandler
+// waypointService: service to handle waypoints
+// routeService: service to handle routes
+// companyService: service to handle companies
+// userCompany: service to handle user-company relationships
+// returns: a new WaypointHandler
 func NewWaypointHandler(
 	waypointService services.WaypointService,
 	routeService services.RouteService,
@@ -33,18 +40,45 @@ func NewWaypointHandler(
 	}
 }
 
+// CreateWaypointRequest is a struct to handle the request to create a waypoint
 type CreateWaypointRequest struct {
+	// Name of the waypoint
+	// Example: "Waypoint 1"
 	Name         string  `json:"name"`
+
+	// Latitude of the waypoint
+	// Example: -12.04318
 	Latitude     float64 `json:"latitude"`
+
+	// Longitude of the waypoint
+	// Example: -77.02824
 	Longitude    float64 `json:"longitude"`
+
+	// Device serial number
+	// Example: "1234567890"
 	DeviceSerial string  `json:"device_serial"`
+
+	// Route ID to which the waypoint belongs
+	// Example: 1
 	RouteID      uint    `json:"route_id"`
 }
 
+// UpdateWaypointRequest is a struct to handle the request to update a waypoint
 type UpdateWaypointRequest struct {
+	// Name of the waypoint
+	// Example: "Waypoint 1"
 	Name         string  `json:"name"`
+
+	// Latitude of the waypoint
+	// Example: -12.04318
 	Latitude     float64 `json:"latitude"`
+
+	// Longitude of the waypoint
+	// Example: -77.02824
 	Longitude    float64 `json:"longitude"`
+
+	// Device serial number
+	// Example: "1234567890"
 	DeviceSerial string  `json:"device_serial"`
 }
 

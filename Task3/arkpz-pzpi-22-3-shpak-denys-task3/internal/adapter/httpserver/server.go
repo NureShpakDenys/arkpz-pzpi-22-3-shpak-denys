@@ -1,4 +1,5 @@
-package httpserver
+// Package httpserver provides the http server and the routes for the API.
+package httpserver // import "wayra/internal/adapter/httpserver"
 
 import (
 	"log/slog"
@@ -14,6 +15,20 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// NewRouter creates a new gin router with all the routes and middlewares
+// log: logger
+// cfg: config
+// authHandler: handler for the auth routes
+// companyHandler: handler for the company routes
+// userHandler: handler for the user routes
+// routeHanler: handler for the route routes
+// waypointHandler: handler for the waypoint routes
+// authService: service to validate the token
+// sensorDataHandler: handler for the sensor data routes
+// deliveryHandler: handler for the delivery routes
+// productHandler: handler for the product routes
+// adminHandler: handler for the admin routes
+// returns: *gin.Engine
 func NewRouter(
 	log *slog.Logger,
 	cfg *config.Config,

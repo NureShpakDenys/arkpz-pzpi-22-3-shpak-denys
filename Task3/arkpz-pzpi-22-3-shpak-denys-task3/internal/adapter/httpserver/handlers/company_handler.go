@@ -477,6 +477,9 @@ func (h *CompanyHandler) RemoveUserFromCompany(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User removed from company successfully"})
 }
 
+// getUserIdFromToken gets the user ID from the token in the request
+// c: The gin context
+// Returns: The user ID and an error if there was a problem
 func getUserIDFromToken(c *gin.Context) (*uint, error) {
 	tokenCookie, err := c.Cookie("token")
 	if err != nil {

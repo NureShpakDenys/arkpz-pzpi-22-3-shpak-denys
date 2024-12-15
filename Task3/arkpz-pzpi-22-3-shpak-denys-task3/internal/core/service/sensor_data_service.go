@@ -1,14 +1,18 @@
-package service
+package service // import "wayra/internal/core/service"
 
 import (
 	"wayra/internal/core/domain/models"
 	"wayra/internal/core/port"
 )
 
+// SensorDataService is a service that manages the sensor data
 type SensorDataService struct {
-	*GenericService[models.SensorData]
+	*GenericService[models.SensorData] // Embedding the generic service
 }
 
+// NewSensorDataService creates a new sensor data service
+// repo: the repository to use
+// returns: a new sensor data service
 func NewSensorDataService(repo port.Repository[models.SensorData]) *SensorDataService {
 	return &SensorDataService{
 		GenericService: NewGenericService(repo),

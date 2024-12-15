@@ -1,4 +1,6 @@
-package config
+// Package config provides utilities for loading application configuration
+// using YAML files and environment variables.
+package config // import "wayra/internal/adapter/config"
 
 import (
 	"flag"
@@ -8,23 +10,33 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+// Config defines the main configuration structure.
+// This structure includes storage paths, HTTP server configuration,
+// authentication settings, and database credentials.
 type Config struct {
-	StoragePath string     `yaml:"storage_path" env-required:"true"`
-	Http        HttpConfig `yaml:"http"`
-	AuthConfig  AuthConfig `yaml:"auth"`
-	DBPassword  string     `yaml:"db_password" env-required:"true"`
+	StoragePath string     `yaml:"storage_path" env-required:"true"` // Path to the storage directory.
+	Http        HttpConfig `yaml:"http"`                             // HTTP server configuration.
+	AuthConfig  AuthConfig `yaml:"auth"`                             // Authentication configuration.
+	DBPassword  string     `yaml:"db_password" env-required:"true"`  // Database password.
 }
 
+// HttpConfig defines the HTTP server configuration.
+// This structure includes the port and timeout settings for the HTTP server.
 type HttpConfig struct {
-	Port    int           `yaml:"port"`
-	Timeout time.Duration `yaml:"timout"`
+	Port    int           `yaml:"port"`   // Port number for the HTTP server.
+	Timeout time.Duration `yaml:"timout"` // Timeout duration for the HTTP server.
 }
 
+// AuthConfig defines the authentication configuration.
+// This structure includes the secret key and token expiration time.
 type AuthConfig struct {
-	SecretKey   string        `yaml:"secret"`
-	TokenExpiry time.Duration `yaml:"token_ttl"`
+	SecretKey   string        `yaml:"secret"`    // Secret key for authentication.
+	TokenExpiry time.Duration `yaml:"token_ttl"` // Token expiration duration.
 }
 
+// MustLoad loads the configuration file specified by the CONFIG_PATH
+// environment variable or the --config flag and panics if any error occurs.
+// This function ensures the configuration is properly loaded or terminates the application.
 func MustLoad() *Config {
 	configPath := fetchConfigPath()
 	if configPath == "" {
@@ -34,6 +46,8 @@ func MustLoad() *Config {
 	return MustLoadPath(configPath)
 }
 
+// MustLoadPath loads the configuration from the given path and panics if any error occurs.
+// This function reads the YAML configuration file and parses it into a Config structure.
 func MustLoadPath(configPath string) *Config {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		panic("config file does not exist: " + configPath)
@@ -48,6 +62,9 @@ func MustLoadPath(configPath string) *Config {
 	return &cfg
 }
 
+// fetchConfigPath fetches the path to the configuration file from the --config flag
+// or the CONFIG_PATH environment variable.
+// This function prioritizes the command-line flag over the environment variable.
 func fetchConfigPath() string {
 	var res string
 

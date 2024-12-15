@@ -1,4 +1,4 @@
-package handlers
+package handlers // import "wayra/internal/adapter/httpserver/handlers"
 
 import (
 	"context"
@@ -13,17 +13,24 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// UserHandler is a struct to handle user requests
 type UserHandler struct {
-	userService services.UserService
+	userService services.UserService // is a service to handle user business logic
 }
 
+// NewUserHandler is a function to create a new UserHandler
+// userService: is a service to handle user business logic
+// returns: a new UserHandler
 func NewUserHandler(userService services.UserService) *UserHandler {
 	return &UserHandler{
 		userService: userService,
 	}
 }
 
+// UpdateUserRequest is a struct to handle user update request
 type UpdateUserRequest struct {
+	// Name is the name of the user
+	// Example: John Doe
 	Name string `json:"name"`
 }
 
