@@ -1,1 +1,306 @@
-﻿
+﻿Харківський національний університет радіоелектроніки
+Факультет комп'ютерних наук
+Катедра програмної інженерії
+
+
+
+
+ЗВІТ
+до лабораторної роботи №4
+з дисципліни  «Аналіз та рефакторинг коду»
+на тему: «РОЗРОБКА IoT КЛІЄНТА 
+(БІЗНЕС-ЛОГІКИ ТА ФУНКЦІЙ НАЛАШТУВАННЯ)»
+
+
+
+Виконав
+ст. гр. ПЗПІ-22-3
+Шпак Денис Олександрович
+
+Перевірив
+ст. викладач катедри ПІ
+Сокорчук Ігор Петрович
+
+
+
+Харків 2024
+1 МЕТА РОБОТИ
+
+     Мета даної лабораторної роботи – розробити програмне забезпечення для  IoT або SmartDevice пристрою, створеного на базі будь-якої поширеної на  сьогодні платформи, придатної для реалізації вбудованих систем.
+     
+2 ХІД РОБОТИ
+
+     У ході виконання лабораторної роботи було розроблено діаграму прецедентів та діаграми діяльності для IoT-клієнтів. Діаграма прецедентів дозволила визначити основні сценарії використання системи, описати взаємодію IoT-клієнтів із функціоналом системи. Діаграми діяльності деталізували послідовність виконання операцій у системі, що дозволило відобразити логіку взаємодії та потік даних у процесах налаштування та використання IoT-клієнтів.
+     Зображення UML діаграм прецедентів та діяльності для IoT клієнта наведено у додатку А.
+     На основі створених діаграм було розроблено програмну реалізацію бізнес-логіки для IoT-клієнтів. Ця логіка забезпечила ефективне виконання ключових функцій, таких як обробка запитів, збір даних, їх аналіз та передача на серверну частину системи.
+     Крім того, було створено функції налаштування IoT-клієнта, які дозволяють здійснювати початкову конфігурацію пристроїв, встановлювати необхідну частоту відправки даних та опціональний вибір для отримування попереджень про потенціальні погодні небезпеки. Реалізований функціонал надає користувачам зручний інструмент для управління IoT-пристроями та забезпечує їх інтеграцію у загальну інфраструктуру системи.
+     Код реалізації даних функцій наведено у додатку Б.
+     Таким чином, у ході роботи було виконано аналіз та проєктування системи з використанням діаграм прецедентів і діяльності, що стало основою для програмної реалізації бізнес-логіки та функцій налаштування IoT-клієнтів. Реалізовані рішення забезпечили чітку організацію роботи IoT-пристроїв, їх ефективну конфігурацію та функціональну інтеграцію у середовище.
+     Відеозвіт із демонстрацією виконаної роботи доступний за посиланням, наведеним у додатку В.
+     
+ВИСНОВКИ
+
+У результаті виконання лабораторної роботи було створено діаграми прецедентів та діальноі для IoT клієнтів. На основі даних діаграм було створено програмну реалізацію бізнес логіки та функцій налаштування ІоТ клієнта.     
+     
+     
+ДОДАТОК А
+UML діаграми прецедентів та діальності для IoT клієнта
+
+
+Рисунок А.1 – Діаграма діяльності для IoT клієнта
+
+Рисунок А.2 – Діаграма прецедентів для IoT клієнта
+
+
+
+
+
+
+
+ДОДАТОК Б
+Код програмної реалізації бізнес логіки та функцій налаштування ІоТ клієнта
+
+001 #include "SensorData.h"
+002 #include "Global.h"
+003 #include "WaypointManager.h"
+004 #include <math.h>
+005 #include <vector>
+006 #include <HTTPClient.h>
+007 #include "DataAnalysis.h"
+008 #include <WiFiUdp.h>
+009 #include <NTPClient.h>
+010 #include <ArduinoJson.h>
+011
+012 WiFiUDP ntpUDP;
+013 NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
+014
+015 float simulatedTemperature = 20.0;
+016 float simulatedHumidity = 50.0;
+017 float simulatedWindSpeed = 5.0;
+018 float simulatedPressure = 1000.0;
+019
+020 void simulateData() {
+021   simulatedTemperature += (random(-10, 11) / 10.0);
+022   simulatedHumidity += (random(-5, 6) / 10.0);
+023   simulatedWindSpeed += (random(-2, 3) / 10.0);
+024   simulatedPressure += (random(-5, 6) / 10.0);
+025
+026   simulatedTemperature = constrain(simulatedTemperature, 15.0, 30.0);
+027   simulatedHumidity = constrain(simulatedHumidity, 30.0, 80.0);
+028   simulatedWindSpeed = constrain(simulatedWindSpeed, 0.0, 20.0);
+029   simulatedPressure = constrain(simulatedPressure, 950.0, 1050.0);
+030
+031   Serial.print("Temp: "); Serial.print(simulatedTemperature);
+032   Serial.print("C, Hum: "); Serial.print(simulatedHumidity);
+033   Serial.print("%, Wind: "); Serial.print(simulatedWindSpeed);
+034   Serial.print("m/s, Press: "); Serial.print(simulatedPressure);
+035   Serial.println("hPa");
+036 }
+037
+038 int compareWithOtherWaypoints(const std::vector<SensorData>& deviceData) {
+039   HTTPClient http;
+040   String url = String(serverAddress) + "/routes/" + String(routeID) + "/get-sensor-data";
+041
+042   http.begin(url);
+043   int httpCode = http.GET();
+044   String response = http.getString();
+045
+046   const size_t capacity = JSON_OBJECT_SIZE(10) + JSON_ARRAY_SIZE(20);
+047   DynamicJsonDocument otherData(capacity);
+048
+049   deserializeJson(otherData, response);
+050   http.end();
+051
+052   std::vector<float> otherTemperatures, otherHumidities, otherWindSpeeds, otherPressures;
+053
+054   for (JsonObject dataPoint : otherData.as<JsonArray>()) {
+055     int otherWaypointID = dataPoint["waypoint_id"];
+056     if (otherWaypointID != waypointID) {
+057       otherTemperatures.push_back(dataPoint["temperature"]);
+058       otherHumidities.push_back(dataPoint["humidity"]);
+059       otherWindSpeeds.push_back(dataPoint["wind_speed"]);
+060       otherPressures.push_back(dataPoint["mean_pressure"]);
+061     }
+062   }
+063
+064   if (otherTemperatures.size() == 0) {
+065     Serial.println("No other sd detected");
+066     return 0;
+067   }
+068
+069   std::vector<float> deviceTemperatures, deviceHumidities, deviceWindSpeeds, devicePressures;
+070   for (const SensorData& sd : deviceData) {
+071     deviceTemperatures.push_back(sd.temperature);
+072     deviceHumidities.push_back(sd.humidity);
+073     deviceWindSpeeds.push_back(sd.windSpeed);
+074     devicePressures.push_back(sd.pressure);
+075   }
+076
+077   float deviceCVTemp = calculateCoefficientOfVariation(deviceTemperatures);
+078   float deviceCVHum = calculateCoefficientOfVariation(deviceHumidities);
+079   float deviceCVWind = calculateCoefficientOfVariation(deviceWindSpeeds);
+080   float deviceCVPress = calculateCoefficientOfVariation(devicePressures);
+081
+082   float otherCVTemp = calculateCoefficientOfVariation(otherTemperatures);
+083   float otherCVHum = calculateCoefficientOfVariation(otherHumidities);
+084   float otherCVWind = calculateCoefficientOfVariation(otherWindSpeeds);
+085   float otherCVPress = calculateCoefficientOfVariation(otherPressures);
+086
+087   bool tempAnomaly = deviceCVTemp > otherCVTemp * 1.5;
+088   bool humAnomaly = deviceCVHum > otherCVHum * 1.5;
+089   bool windAnomaly = deviceCVWind > otherCVWind * 1.5;
+090   bool pressAnomaly = deviceCVPress > otherCVPress * 1.5;
+091
+092   if (tempAnomaly || humAnomaly || windAnomaly || pressAnomaly) {
+093     if (otherCVTemp < 0.1 && otherCVHum < 0.1 && otherCVWind < 0.1 && otherCVPress < 0.1) {
+094       return 1;
+095     }
+096     return 2;
+097   }
+098   return 0;
+099 }
+100
+101 void analyzeSensorData() {
+102   if (!getWeatherAlerts) return;
+103
+104   const int dataSize = (sendDataFrequency * 60) / 10;
+105   static std::vector<SensorData> sensorDataBuffer;
+106
+107   SensorData newData = {
+108     simulatedTemperature,
+109     simulatedHumidity,
+110     simulatedWindSpeed,
+111     simulatedPressure
+112   };
+113   sensorDataBuffer.push_back(newData);
+114
+115   if (sensorDataBuffer.size() > dataSize) {
+116     sensorDataBuffer.erase(sensorDataBuffer.begin());
+117   }
+118
+119   if (sensorDataBuffer.size() == dataSize) {
+120     int anomalyType = compareWithOtherWaypoints(sensorDataBuffer);
+121
+122     if (anomalyType == 1) {
+123       sendAnomalyStatus();
+124     } else if (anomalyType == 2) {
+125       sendBadWeatherStatus();
+126     }
+127   }
+128 }
+129
+130 void sendAnomalyStatus() {
+131   HTTPClient http;
+132   String url = String(serverAddress) + "/waypoints/" + String(waypointID);
+133
+134   Serial.println("Sending anomaly status (device issue) to server...");
+135
+136   const size_t capacity = JSON_OBJECT_SIZE(2) + 60;
+137   DynamicJsonDocument doc(capacity);
+138
+139   doc["status"] = "anomaly_detected";
+140   doc["details"] = "Device CV exceeds normal values. Possible sensor malfunction.";
+141
+142   String payload;
+143   serializeJson(doc, payload);
+144
+145   http.begin(url);
+146   http.addHeader("Content-Type", "application/json");
+147   http.addHeader("Content-Length", String(payload.length()));
+148
+149   int httpCode = http.PUT(payload);
+150   String response = http.getString();
+151
+152   Serial.println("Response: " + response);
+153
+154   http.end();
+155 }
+156
+157 void sendBadWeatherStatus() {
+158   HTTPClient http;
+159   String url = String(serverAddress) + "/routes/" + String(routeID);
+160
+161   Serial.println("Sending bad weather status to server...");
+162
+163   const size_t capacity = JSON_OBJECT_SIZE(2) + 60;
+164   DynamicJsonDocument doc(capacity);
+165
+166   doc["status"] = "bad_weather_detected";
+167   doc["details"] = "CV indicates abnormal weather conditions across multiple waypoints.";
+168
+169   String payload;
+170   serializeJson(doc, payload);
+171
+172   http.begin(url);
+173   http.addHeader("Content-Type", "application/json");
+174   http.addHeader("Content-Length", String(payload.length()));
+175
+176   int httpCode = http.PUT(payload);
+177   String response = http.getString();
+178   Serial.println("Response: " + response);
+179
+180   http.end();
+181 }
+182
+183 time_t getCurrentTime() {
+184   timeClient.update();
+185   return timeClient.getEpochTime();
+186 }
+187
+188 String getFormattedTimestamp() {
+189   time_t now = getCurrentTime();
+190   struct tm* timeInfo = localtime(&now);
+191
+192
+193   int timezoneOffset = 3 * 3600;
+194   time_t localTime = now + timezoneOffset;
+195   timeInfo = gmtime(&localTime);
+196
+197
+198   char buffer[30];
+199   snprintf(buffer, sizeof(buffer), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+200            timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday,
+201            timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+202
+203   return String(buffer);
+204 }
+205
+206 void sendSensorData(SensorData sensorData) {
+207   HTTPClient http;
+208   String url = String(serverAddress) + "/sensor-data/";
+209
+210   String timestamp = getFormattedTimestamp();
+211
+212   const size_t capacity = JSON_OBJECT_SIZE(6) + 60;
+213   DynamicJsonDocument doc(capacity);
+214
+215   doc["date"] = timestamp;
+216   doc["temperature"] = sensorData.temperature;
+217   doc["humidity"] = sensorData.humidity;
+218   doc["wind_speed"] = sensorData.windSpeed;
+219   doc["pressure"] = sensorData.pressure;
+220   doc["waypoint_id"] = waypointID;
+221
+222   String payload;
+223   serializeJson(doc, payload);
+224
+225   http.begin(url);
+226   http.addHeader("Content-Type", "application/json");
+227   http.addHeader("Content-Length", String(payload.length()));
+228
+229   int httpCode = http.POST(payload);
+230   String response = http.getString();
+231
+232   Serial.println("Sensor data sent: " + payload);
+233   Serial.println("Response: " + response);
+234
+235   http.end();
+236 }
+ДОДАТОК В
+Посилання на відеозвіт
+
+     Посилання: https://youtu.be/-h-eKTxIHrE
+
+
+
+
