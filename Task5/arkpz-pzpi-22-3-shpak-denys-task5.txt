@@ -1,1 +1,200 @@
-﻿
+﻿Харківський національний університет радіоелектроніки
+Факультет комп'ютерних наук
+Катедра програмної інженерії
+
+
+
+
+ЗВІТ
+до лабораторної роботи №5
+з дисципліни  «Аналіз та рефакторинг коду»
+на тему: «РОЗГОРТАННЯ ПРОГРАМНОЇ СИСТЕМИ ТА ДЕМОНСТРАЦІЯ ЇЇ РОБОТИ»
+
+
+
+Виконав
+ст. гр. ПЗПІ-22-3
+Шпак Денис Олександрович
+
+Перевірив
+ст. викладач катедри ПІ
+Сокорчук Ігор Петрович
+
+
+
+Харків 2024
+1 МЕТА РОБОТИ
+
+Мета даної лабораторної роботи – розгорнути програмну систему та продемонструвати її роботу.     
+     
+2 ХІД РОБОТИ
+
+     У ході виконання лабораторної роботи було реалізовано повний цикл розгортання програмної системи. Спочатку здійснено підготовку необхідних компонентів: встановлено залежності та налаштовано конфігурацію системи, зокрема, файлу конфігурації config.yaml. Для цього було використано спеціалізовані функції, що дозволили ефективно інтегрувати користувацькі дані, зокрема, ім'я користувача, пароль та параметри бази даних.
+     Код даної програми наведено у додатку А.
+     Наступним етапом було забезпечено створення та налаштування бази даних. Було виконано перевірку наявності бази даних, її створення у разі необхідності, а також очищення таблиць і відновлення даних із зашифрованого резервного файлу. З цією метою було використано методи шифрування та дешифрування, які гарантують безпеку збереження конфіденційних даних. Процес передбачав застосування функцій decrypt_file для обробки резервних файлів та encrypt_data для повторного їхнього шифрування після завершення операцій.
+     На додаток до цього, у системі реалізовано функціонал для створення нового користувача та аутентифікації чинного. Паролі користувачів були захищені за допомогою хешування, реалізованого через бібліотеку bcrypt. Для передачі конфігураційних даних на сервер використовувався метод конвертації YAML у JSON, після чого дані надсилалися на сервер за допомогою HTTP-запиту до заданого URL.
+     Для перевірки коректності виконання процесу розгортання було записано відео демонстрації роботи системи, що включала читання конфігурації, роботу з базою даних та управління резервними копіями. У підсумку всі етапи розгортання виконано успішно, а працездатність системи підтверджено.
+     Відео з демонстрацією запуску програми наведено у додатку Б.
+
+ВИСНОВКИ
+
+У результаті виконання лабораторної роботи було здійснено успішне розгортання програмної системи та продемонстровано її функціонування. Система забезпечує безпечне збереження конфіденційних даних, автоматизацію операцій із базами даних та гнучку інтеграцію конфігураційних даних. Реалізація роботи базується на сучасних методах шифрування, хешування та обробки резервних копій, що підвищує її надійність та безпеку.     
+     
+     
+
+
+
+
+
+
+ДОДАТОК А
+Код скрипту для розгортання програмної системи
+
+001 import getpass
+002 from config import write_config
+003 from user_management import create_user, fetch_user_data
+004 from system_utils import install_dependencies, add_go_path
+005 from database_utils import ensure_database_exists, truncate_tables, restore_database
+006 from encryption_utils import decrypt_file, encrypt_data, decrypt_data
+007 from pathlib import Path
+008 from helper import write_file, get_latest_backup_file
+009
+010 def main():
+011     print("=== Actions: ===")
+012
+013     print("1. Create new user")
+014     print("2. Log in as existed user")
+015
+016     choice = input("Choice: ")
+017
+018     username = input("Enter username: ").strip()
+019     password = getpass.getpass("Р’РІРµРґС–С‚СЊ РїР°СЂРѕР»СЊ: ").strip()
+020
+021     try:
+022         if choice == "1":
+023             user_data = create_user(username, password)
+024         elif choice == "2":
+025             user_data = fetch_user_data(username, password)
+026         else:
+027             print("fetched.")
+028             return
+029
+030         config_path = "./server/config/config.yaml"
+031         write_config(config_path, user_data)
+032         print(f"Config path {config_path}")
+033
+034         install_dependencies(user_data['db_password'])
+035
+036         ensure_database_exists(
+037             dbname=user_data['dbname'],
+038             user=user_data['dbuser'],
+039             password=user_data['db_password'],
+040             host="localhost",
+041             port=5432
+042         )
+043
+044         migrations_folder = "./server/migrations"
+045         backup_path = get_latest_backup_file(migrations_folder)
+046         if not backup_path:
+047             return
+048
+049         print(f"Backup path: {backup_path}")
+050
+051         decrypted_sql = decrypt_file(backup_path, user_data['encryption_key'].encode())
+052
+053         write_file(backup_path, decrypted_sql)
+054
+055         truncate_tables(
+056             db_name=user_data['dbname'],
+057             db_user=user_data['dbuser'],
+058             db_password=user_data['db_password'],
+059             host="localhost",
+060             port=5432
+061         )
+062
+063         restore_database(
+064             latest_file=backup_path,
+065             db_name=user_data['dbname'],
+066             db_user=user_data['dbuser'],
+067             db_password=user_data['db_password'],
+068             host="localhost",
+069             port=5432
+070         )
+071
+072         encrypted_data = encrypt_data(decrypted_sql, user_data['encryption_key'])
+073         write_file(backup_path, encrypted_data)
+074
+075      
+076
+077     except Exception as e:
+078         print(f"Error: {e}")
+079
+080 if __name__ == "__main__":
+081     main()
+
+001 import json
+002 import yaml
+003 import requests
+004 import bcrypt
+005 import copy
+006
+007 def get_user_credentials():
+008     username = input("Enter your username: ")
+009     password = input("Enter your password: ")
+010     return username, password
+011
+012 def hash_password(password):
+013
+014     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+015     return hashed_password.decode('utf-8')
+016
+017 def convert_yaml_to_json(yaml_file_path):
+018
+019     with open(yaml_file_path, 'r') as yaml_file:
+020         config_data = yaml.safe_load(yaml_file)
+021
+022     return config_data
+023
+024 def send_json_to_server(json_data, server_url):
+025     headers = {'Content-Type': 'application/json'}
+026
+027     cleaned_data = copy.deepcopy(json_data)
+028     print(cleaned_data)
+029
+030     response = requests.post(server_url, json=cleaned_data, headers=headers)
+031
+032     if response.status_code == 200 or response.status_code == 201:
+033         print("Config data successfully sent to the server.")
+034     else:
+035         print(f"Failed to send data: {response.status_code} - {response.text}")
+036
+037
+038 def main():
+039     username, password = get_user_credentials()
+040
+041     hashed_password = hash_password(password)
+042
+043     config_yaml_path = ".\\server\\config\\config.yaml"
+044     config_data = convert_yaml_to_json(config_yaml_path)
+045
+046     new_user = {
+047         "username": username,
+048         "password": hashed_password,
+049         "configuration": config_data
+050     }
+051
+052     server_url = "http://localhost:8080/save-json"
+053     send_json_to_server(new_user, server_url)
+054
+055
+056 if __name__ == "__main__":
+057     main()
+
+ДОДАТОК Б
+Посилання на відеозвіт
+
+     Посилання: https://youtu.be/ajJgRwpnuT8
+
+
+
+
